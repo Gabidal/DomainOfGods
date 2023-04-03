@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 using namespace std;
 
@@ -187,7 +188,6 @@ enum class ENTITY_TYPE{
     ITEM,
 };
 
-
 // Rarity class like in Overlord
 enum class CLASS{
     LOW,            // 20% of all
@@ -344,237 +344,149 @@ public:
 
 };
 
+enum class ATTRIBUTE_TYPES{
+    STRENGTH,               // 10% to get
+    DAMAGE,                 // 10% to get
+    HEALTH,                 // 10% to get
+    SPEED,                  // 10% to get
+    DEFENSE,                // 10% to get
+    ACCURACY,               // 10% to get
+    EVASION,                // 10% to get
+    CRIT_CHANCE,            // 5% to get
+    CRIT_POWER,             // 5% to get
+    SIZE_MULTIPLIER,        // 0.001% to get
+    // All resistances      
+    HEAT_RESISTANCE,        // 5% to get
+    COLD_RESISTANCE,        // 5% to get
+    ELECTRICITY_RESISTANCE, // 5% to get
+    POISON_RESISTANCE,      // 2.5% to get
+    ACID_RESISTANCE,        // 2.5% to get
+    RADIATION_RESISTANCE,   // 0.001% to get
+    PSYCHIC_RESISTANCE,     // 1% to get
+    SONIC_RESISTANCE,       // 2% to get
+    LIGHT_RESISTANCE,       // 3.5% to get
+    DARKNESS_RESISTANCE,    // 3% to get
+    MAGIC_RESISTANCE,       // 5% to get
+    PHYSICAL_RESISTANCE,    // 5% to get
+    MENTAl_RESISTANCE,      // 1% to get
+    ASTRAL_RESISTANCE,      // 0.1% to get
+    DIMENSIONAL_RESISTANCE, // 0.01% to get
+    NUCLEAR_RESISTANCE,     // 0.001% to get
+    BIOLOGICAL_RESISTANCE,  // 0.001% to get
+    NATURAL_RESISTANCE,     // 0.001% to get
+    EXPLOSIVE_RESISTANCE,   // 0.1% to get
+
+    END
+};
+
+const double ATTRIBUTE_Probabilities[] = {
+    0.1,    // STRENGTH
+    0.1,    // DAMAGE
+    0.1,    // HEALTH
+    0.1,    // SPEED
+    0.1,    // DEFENSE
+    0.1,    // ACCURACY
+    0.1,    // EVASION
+    0.05,   // CRIT_CHANCE
+    0.05,   // CRIT_POWER
+    0.00001,    // SIZE_MULTIPLIER
+    // All resistances      
+    0.05,   // HEAT_RESISTANCE
+    0.05,   // COLD_RESISTANCE
+    0.05,   // ELECTRICITY_RESISTANCE
+    0.025,  // POISON_RESISTANCE
+    0.025,  // ACID_RESISTANCE
+    0.0001, // RADIATION_RESISTANCE
+    0.01,   // PSYCHIC_RESISTANCE
+    0.02,   // SONIC_RESISTANCE
+    0.035,  // LIGHT_RESISTANCE
+    0.03,   // DARKNESS_RESISTANCE
+    0.05,   // MAGIC_RESISTANCE
+    0.05,   // PHYSICAL_RESISTANCE
+    0.01,   // MENTAl_RESISTANCE
+    0.001,  // ASTRAL_RESISTANCE
+    0.0001, // DIMENSIONAL_RESISTANCE
+    0.00001,    // NUCLEAR_RESISTANCE
+    0.00001,    // BIOLOGICAL_RESISTANCE
+    0.00001,    // NATURAL_RESISTANCE
+    0.0001, // EXPLOSIVE_RESISTANCE
+
+    1.0,    // END
+};
+
 class ATTRIBUTES{
 public:
-    float Affect_Strength = 1.f;
-    float Affect_Damage = 1.f;
-    float Affect_Health = 1.f;
-    float Affect_Speed = 1.f;
-    float Affect_Defense = 1.f;
-    // All resistances
-    float Affect_Heat_Resistance = 1.f;
-    float Affect_Cold_Resistance = 1.f;
-    float Affect_Electricity_Resistance = 1.f;
-    float Affect_Poison_Resistance = 1.f;
-    float Affect_Acid_Resistance = 1.f;
-    float Affect_Radiation_Resistance = 1.f;
-    float Affect_Psychic_Resistance = 1.f;
-    float Affect_Sonic_Resistance = 1.f;
-    float Affect_Light_Resistance = 1.f;
-    float Affect_Darkness_Resistance = 1.f;
-    float Affect_Magic_Resistance = 1.f;
-    float Affect_Physical_Resistance = 1.f;
-    float Affect_Mental_Resistance = 1.f;
-    float Affect_Astral_Resistance = 1.f;
-    float Affect_Dimensional_Resistance = 1.f;
-    float Affect_Nuclear_Resistance = 1.f;
-    float Affect_Biological_Resistance = 1.f;
-    float Affect_Natural_Resistance = 1.f;
-    float Affect_Explosive_Resistance = 1.f;
-    //--
-    float Affect_Accuracy = 1.f;
-    float Affect_Evasion = 1.f;
-    float Affect_Crit_Chance = 1.f;
-    float Affect_Crit_Power = 1.f;
-    float Affect_Size = 1.f;
+    unordered_map<ATTRIBUTE_TYPES, float> Attributes;
 
     ATTRIBUTES() = default;
+    
+    float Get(ATTRIBUTE_TYPES type){
+        if (Attributes.find(type) != Attributes.end())
+            return Attributes[type];
+        else
+            return 1.f;   // Passive.
+    }
 
-    ATTRIBUTES(const ATTRIBUTES& attr){
-        Affect_Strength = attr.Affect_Strength;
-        Affect_Damage = attr.Affect_Damage;
-        Affect_Health = attr.Affect_Health;
-        Affect_Speed = attr.Affect_Speed;
-        Affect_Defense = attr.Affect_Defense;
-        Affect_Heat_Resistance = attr.Affect_Heat_Resistance;
-        Affect_Cold_Resistance = attr.Affect_Cold_Resistance;
-        Affect_Electricity_Resistance = attr.Affect_Electricity_Resistance;
-        Affect_Poison_Resistance = attr.Affect_Poison_Resistance;
-        Affect_Acid_Resistance = attr.Affect_Acid_Resistance;
-        Affect_Radiation_Resistance = attr.Affect_Radiation_Resistance;
-        Affect_Psychic_Resistance = attr.Affect_Psychic_Resistance;
-        Affect_Sonic_Resistance = attr.Affect_Sonic_Resistance;
-        Affect_Light_Resistance = attr.Affect_Light_Resistance;
-        Affect_Darkness_Resistance = attr.Affect_Darkness_Resistance;
-        Affect_Magic_Resistance = attr.Affect_Magic_Resistance;
-        Affect_Physical_Resistance = attr.Affect_Physical_Resistance;
-        Affect_Mental_Resistance = attr.Affect_Mental_Resistance;
-        Affect_Astral_Resistance = attr.Affect_Astral_Resistance;
-        Affect_Dimensional_Resistance = attr.Affect_Dimensional_Resistance;
-        Affect_Nuclear_Resistance = attr.Affect_Nuclear_Resistance;
-        Affect_Biological_Resistance = attr.Affect_Biological_Resistance;
-        Affect_Natural_Resistance = attr.Affect_Natural_Resistance;
-        Affect_Explosive_Resistance = attr.Affect_Explosive_Resistance;
-        Affect_Accuracy = attr.Affect_Accuracy;
-        Affect_Evasion = attr.Affect_Evasion;
-        Affect_Crit_Chance = attr.Affect_Crit_Chance;
-        Affect_Crit_Power = attr.Affect_Crit_Power;
-        Affect_Size = attr.Affect_Size;
+    // Operator overloads
+    float operator[](ATTRIBUTE_TYPES type){
+        return Get(type);
     }
 
     ATTRIBUTES& operator=(const ATTRIBUTES& attr){
-        Affect_Strength = attr.Affect_Strength;
-        Affect_Damage = attr.Affect_Damage;
-        Affect_Health = attr.Affect_Health;
-        Affect_Speed = attr.Affect_Speed;
-        Affect_Defense = attr.Affect_Defense;
-        Affect_Heat_Resistance = attr.Affect_Heat_Resistance;
-        Affect_Cold_Resistance = attr.Affect_Cold_Resistance;
-        Affect_Electricity_Resistance = attr.Affect_Electricity_Resistance;
-        Affect_Poison_Resistance = attr.Affect_Poison_Resistance;
-        Affect_Acid_Resistance = attr.Affect_Acid_Resistance;
-        Affect_Radiation_Resistance = attr.Affect_Radiation_Resistance;
-        Affect_Psychic_Resistance = attr.Affect_Psychic_Resistance;
-        Affect_Sonic_Resistance = attr.Affect_Sonic_Resistance;
-        Affect_Light_Resistance = attr.Affect_Light_Resistance;
-        Affect_Darkness_Resistance = attr.Affect_Darkness_Resistance;
-        Affect_Magic_Resistance = attr.Affect_Magic_Resistance;
-        Affect_Physical_Resistance = attr.Affect_Physical_Resistance;
-        Affect_Mental_Resistance = attr.Affect_Mental_Resistance;
-        Affect_Astral_Resistance = attr.Affect_Astral_Resistance;
-        Affect_Dimensional_Resistance = attr.Affect_Dimensional_Resistance;
-        Affect_Nuclear_Resistance = attr.Affect_Nuclear_Resistance;
-        Affect_Biological_Resistance = attr.Affect_Biological_Resistance;
-        Affect_Natural_Resistance = attr.Affect_Natural_Resistance;
-        Affect_Explosive_Resistance = attr.Affect_Explosive_Resistance;
-        Affect_Accuracy = attr.Affect_Accuracy;
-        Affect_Evasion = attr.Affect_Evasion;
-        Affect_Crit_Chance = attr.Affect_Crit_Chance;
-        Affect_Crit_Power = attr.Affect_Crit_Power;
-        Affect_Size = attr.Affect_Size;
+        Attributes = attr.Attributes;
         return *this;
     }
 
     ATTRIBUTES& operator+=(const ATTRIBUTES& attr){
-        Affect_Strength += attr.Affect_Strength;
-        Affect_Damage += attr.Affect_Damage;
-        Affect_Health += attr.Affect_Health;
-        Affect_Speed += attr.Affect_Speed;
-        Affect_Defense += attr.Affect_Defense;
-        Affect_Heat_Resistance += attr.Affect_Heat_Resistance;
-        Affect_Cold_Resistance += attr.Affect_Cold_Resistance;
-        Affect_Electricity_Resistance += attr.Affect_Electricity_Resistance;
-        Affect_Poison_Resistance += attr.Affect_Poison_Resistance;
-        Affect_Acid_Resistance += attr.Affect_Acid_Resistance;
-        Affect_Radiation_Resistance += attr.Affect_Radiation_Resistance;
-        Affect_Psychic_Resistance += attr.Affect_Psychic_Resistance;
-        Affect_Sonic_Resistance += attr.Affect_Sonic_Resistance;
-        Affect_Light_Resistance += attr.Affect_Light_Resistance;
-        Affect_Darkness_Resistance += attr.Affect_Darkness_Resistance;
-        Affect_Magic_Resistance += attr.Affect_Magic_Resistance;
-        Affect_Physical_Resistance += attr.Affect_Physical_Resistance;
-        Affect_Mental_Resistance += attr.Affect_Mental_Resistance;
-        Affect_Astral_Resistance += attr.Affect_Astral_Resistance;
-        Affect_Dimensional_Resistance += attr.Affect_Dimensional_Resistance;
-        Affect_Nuclear_Resistance += attr.Affect_Nuclear_Resistance;
-        Affect_Biological_Resistance += attr.Affect_Biological_Resistance;
-        Affect_Natural_Resistance += attr.Affect_Natural_Resistance;
-        Affect_Explosive_Resistance += attr.Affect_Explosive_Resistance;
-        Affect_Accuracy += attr.Affect_Accuracy;
-        Affect_Evasion += attr.Affect_Evasion;
-        Affect_Crit_Chance += attr.Affect_Crit_Chance;
-        Affect_Crit_Power += attr.Affect_Crit_Power;
-        Affect_Size += attr.Affect_Size;
+        for (auto& it : attr.Attributes){
+            Attributes[it.first] += it.second;
+        }
         return *this;
     }
 
     ATTRIBUTES& operator-=(const ATTRIBUTES& attr){
-        Affect_Strength -= attr.Affect_Strength;
-        Affect_Damage -= attr.Affect_Damage;
-        Affect_Health -= attr.Affect_Health;
-        Affect_Speed -= attr.Affect_Speed;
-        Affect_Defense -= attr.Affect_Defense;
-        Affect_Heat_Resistance -= attr.Affect_Heat_Resistance;
-        Affect_Cold_Resistance -= attr.Affect_Cold_Resistance;
-        Affect_Electricity_Resistance -= attr.Affect_Electricity_Resistance;
-        Affect_Poison_Resistance -= attr.Affect_Poison_Resistance;
-        Affect_Acid_Resistance -= attr.Affect_Acid_Resistance;
-        Affect_Radiation_Resistance -= attr.Affect_Radiation_Resistance;
-        Affect_Psychic_Resistance -= attr.Affect_Psychic_Resistance;
-        Affect_Sonic_Resistance -= attr.Affect_Sonic_Resistance;
-        Affect_Light_Resistance -= attr.Affect_Light_Resistance;
-        Affect_Darkness_Resistance -= attr.Affect_Darkness_Resistance;
-        Affect_Magic_Resistance -= attr.Affect_Magic_Resistance;
-        Affect_Physical_Resistance -= attr.Affect_Physical_Resistance;
-        Affect_Mental_Resistance -= attr.Affect_Mental_Resistance;
-        Affect_Astral_Resistance -= attr.Affect_Astral_Resistance;
-        Affect_Dimensional_Resistance -= attr.Affect_Dimensional_Resistance;
-        Affect_Nuclear_Resistance -= attr.Affect_Nuclear_Resistance;
-        Affect_Biological_Resistance -= attr.Affect_Biological_Resistance;
-        Affect_Natural_Resistance -= attr.Affect_Natural_Resistance;
-        Affect_Explosive_Resistance -= attr.Affect_Explosive_Resistance;
-        Affect_Accuracy -= attr.Affect_Accuracy;
-        Affect_Evasion -= attr.Affect_Evasion;
-        Affect_Crit_Chance -= attr.Affect_Crit_Chance;
-        Affect_Crit_Power -= attr.Affect_Crit_Power;
-        Affect_Size -= attr.Affect_Size;
+        for (auto& it : attr.Attributes){
+            Attributes[it.first] -= it.second;
+        }
         return *this;
     }
 
     ATTRIBUTES& operator*=(const ATTRIBUTES& attr){
-        Affect_Strength *= attr.Affect_Strength;
-        Affect_Damage *= attr.Affect_Damage;
-        Affect_Health *= attr.Affect_Health;
-        Affect_Speed *= attr.Affect_Speed;
-        Affect_Defense *= attr.Affect_Defense;
-        Affect_Heat_Resistance *= attr.Affect_Heat_Resistance;
-        Affect_Cold_Resistance *= attr.Affect_Cold_Resistance;
-        Affect_Electricity_Resistance *= attr.Affect_Electricity_Resistance;
-        Affect_Poison_Resistance *= attr.Affect_Poison_Resistance;
-        Affect_Acid_Resistance *= attr.Affect_Acid_Resistance;
-        Affect_Radiation_Resistance *= attr.Affect_Radiation_Resistance;
-        Affect_Psychic_Resistance *= attr.Affect_Psychic_Resistance;
-        Affect_Sonic_Resistance *= attr.Affect_Sonic_Resistance;
-        Affect_Light_Resistance *= attr.Affect_Light_Resistance;
-        Affect_Darkness_Resistance *= attr.Affect_Darkness_Resistance;
-        Affect_Magic_Resistance *= attr.Affect_Magic_Resistance;
-        Affect_Physical_Resistance *= attr.Affect_Physical_Resistance;
-        Affect_Mental_Resistance *= attr.Affect_Mental_Resistance;
-        Affect_Astral_Resistance *= attr.Affect_Astral_Resistance;
-        Affect_Dimensional_Resistance *= attr.Affect_Dimensional_Resistance;
-        Affect_Nuclear_Resistance *= attr.Affect_Nuclear_Resistance;
-        Affect_Biological_Resistance *= attr.Affect_Biological_Resistance;
-        Affect_Natural_Resistance *= attr.Affect_Natural_Resistance;
-        Affect_Explosive_Resistance *= attr.Affect_Explosive_Resistance;
-        Affect_Accuracy *= attr.Affect_Accuracy;
-        Affect_Evasion *= attr.Affect_Evasion;
-        Affect_Crit_Chance *= attr.Affect_Crit_Chance;
-        Affect_Crit_Power *= attr.Affect_Crit_Power;
-        Affect_Size *= attr.Affect_Size;
+        for (auto& it : attr.Attributes){
+            Attributes[it.first] *= it.second;
+        }
         return *this;
     }
 
     ATTRIBUTES& operator/=(const ATTRIBUTES& attr){
-        Affect_Strength /= attr.Affect_Strength;
-        Affect_Damage /= attr.Affect_Damage;
-        Affect_Health /= attr.Affect_Health;
-        Affect_Speed /= attr.Affect_Speed;
-        Affect_Defense /= attr.Affect_Defense;
-        Affect_Heat_Resistance /= attr.Affect_Heat_Resistance;
-        Affect_Cold_Resistance /= attr.Affect_Cold_Resistance;
-        Affect_Electricity_Resistance /= attr.Affect_Electricity_Resistance;
-        Affect_Poison_Resistance /= attr.Affect_Poison_Resistance;
-        Affect_Acid_Resistance /= attr.Affect_Acid_Resistance;
-        Affect_Radiation_Resistance /= attr.Affect_Radiation_Resistance;
-        Affect_Psychic_Resistance /= attr.Affect_Psychic_Resistance;
-        Affect_Sonic_Resistance /= attr.Affect_Sonic_Resistance;
-        Affect_Light_Resistance /= attr.Affect_Light_Resistance;
-        Affect_Darkness_Resistance /= attr.Affect_Darkness_Resistance;
-        Affect_Magic_Resistance /= attr.Affect_Magic_Resistance;
-        Affect_Physical_Resistance /= attr.Affect_Physical_Resistance;
-        Affect_Mental_Resistance /= attr.Affect_Mental_Resistance;
-        Affect_Astral_Resistance /= attr.Affect_Astral_Resistance;
-        Affect_Dimensional_Resistance /= attr.Affect_Dimensional_Resistance;
-        Affect_Nuclear_Resistance /= attr.Affect_Nuclear_Resistance;
-        Affect_Biological_Resistance /= attr.Affect_Biological_Resistance;
-        Affect_Natural_Resistance /= attr.Affect_Natural_Resistance;
-        Affect_Explosive_Resistance /= attr.Affect_Explosive_Resistance;
-        Affect_Accuracy /= attr.Affect_Accuracy;
-        Affect_Evasion /= attr.Affect_Evasion;
-        Affect_Crit_Chance /= attr.Affect_Crit_Chance;
-        Affect_Crit_Power /= attr.Affect_Crit_Power;
-        Affect_Size /= attr.Affect_Size;
+        for (auto& it : attr.Attributes){
+            Attributes[it.first] /= it.second;
+        }
         return *this;
+    }
+
+    ATTRIBUTES operator+(const ATTRIBUTES& attr){
+        ATTRIBUTES temp = *this;
+        temp += attr;
+        return temp;
+    }
+
+    ATTRIBUTES operator-(const ATTRIBUTES& attr){
+        ATTRIBUTES temp = *this;
+        temp -= attr;
+        return temp;
+    }
+
+    ATTRIBUTES operator*(const ATTRIBUTES& attr){
+        ATTRIBUTES temp = *this;
+        temp *= attr;
+        return temp;
+    }
+
+    ATTRIBUTES operator/(const ATTRIBUTES& attr){
+        ATTRIBUTES temp = *this;
+        temp /= attr;
+        return temp;
     }
 };
 
@@ -598,36 +510,7 @@ public:
     inline RANK Get_Rank(){ return Rank; }
     inline CLASS Get_Class(){ return Class; }
     inline Location Get_Position() { return Position; }
-
-    inline int Get_Size(){ return Attributes.Affect_Size * Base_Stats.Power; }
-    inline int Get_Strength(){ return Attributes.Affect_Strength * Base_Stats.Power; }
-    inline int Get_Damage(){ return Attributes.Affect_Damage * Base_Stats.Power; }
-    inline int Get_Health(){ return Attributes.Affect_Health * Base_Stats.Power; }
-    inline int Get_Speed(){ return Attributes.Affect_Speed * Base_Stats.Power; }
-    inline int Get_Defense(){ return Attributes.Affect_Defense * Base_Stats.Power; }
-    inline int Get_Heat_Resistance(){ return Attributes.Affect_Heat_Resistance * Base_Stats.Power; }
-    inline int Get_Cold_Resistance(){ return Attributes.Affect_Cold_Resistance * Base_Stats.Power; }
-    inline int Get_Electricity_Resistance(){ return Attributes.Affect_Electricity_Resistance * Base_Stats.Power; }
-    inline int Get_Poison_Resistance(){ return Attributes.Affect_Poison_Resistance * Base_Stats.Power; }
-    inline int Get_Acid_Resistance(){ return Attributes.Affect_Acid_Resistance * Base_Stats.Power; }
-    inline int Get_Radiation_Resistance(){ return Attributes.Affect_Radiation_Resistance * Base_Stats.Power; }
-    inline int Get_Psychic_Resistance(){ return Attributes.Affect_Psychic_Resistance * Base_Stats.Power; }
-    inline int Get_Sonic_Resistance(){ return Attributes.Affect_Sonic_Resistance * Base_Stats.Power; }
-    inline int Get_Light_Resistance(){ return Attributes.Affect_Light_Resistance * Base_Stats.Power; }
-    inline int Get_Darkness_Resistance(){ return Attributes.Affect_Darkness_Resistance * Base_Stats.Power; }
-    inline int Get_Magic_Resistance(){ return Attributes.Affect_Magic_Resistance * Base_Stats.Power; }
-    inline int Get_Physical_Resistance(){ return Attributes.Affect_Physical_Resistance * Base_Stats.Power; }
-    inline int Get_Mental_Resistance(){ return Attributes.Affect_Mental_Resistance * Base_Stats.Power; }
-    inline int Get_Astral_Resistance(){ return Attributes.Affect_Astral_Resistance * Base_Stats.Power; }
-    inline int Get_Dimensional_Resistance(){ return Attributes.Affect_Dimensional_Resistance * Base_Stats.Power; }
-    inline int Get_Nuclear_Resistance(){ return Attributes.Affect_Nuclear_Resistance * Base_Stats.Power; }
-    inline int Get_Biological_Resistance(){ return Attributes.Affect_Biological_Resistance * Base_Stats.Power; }
-    inline int Get_Natural_Resistance(){ return Attributes.Affect_Natural_Resistance * Base_Stats.Power; }
-    inline int Get_Explosive_Resistance(){ return Attributes.Affect_Explosive_Resistance * Base_Stats.Power; }
-    inline int Get_Accuracy(){ return Attributes.Affect_Accuracy * Base_Stats.Power; }
-    inline int Get_Evasion(){ return Attributes.Affect_Evasion * Base_Stats.Power; }
-    inline int Get_Crit_Chance(){ return Attributes.Affect_Crit_Chance * Base_Stats.Power; }
-    inline int Get_Crit_Power(){ return Attributes.Affect_Crit_Power * Base_Stats.Power; }
+    inline float Get_Attribute(ATTRIBUTE_TYPES type){ return Attributes[type] * Base_Stats.Power; }
 
 };
 

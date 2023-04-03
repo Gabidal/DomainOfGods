@@ -10,8 +10,8 @@ namespace GLOBALS{
     extern void Init_Globals();
 
     
-    extern int MIN_RANK;
-    extern int MAX_RANK;
+    extern int MIN_POWER;
+    extern int MAX_POWER;
 
 }
 

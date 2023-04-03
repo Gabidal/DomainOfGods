@@ -49,7 +49,7 @@ float Float_Range(float min, float max){
 STATS Lot_Stats(Entity* e){
     STATS Result;
     
-    Result.Power = Int_Range(GLOBALS::MIN_RANK, GLOBALS::MAX_RANK) * (int)e->Get_Rank();
+    Result.Power = Int_Range(GLOBALS::MIN_POWER, GLOBALS::MAX_POWER) * (int)e->Get_Rank();
 
     return Result;
 }
@@ -57,71 +57,17 @@ STATS Lot_Stats(Entity* e){
 ATTRIBUTES Lot_Attributes(Entity* e){
     ATTRIBUTES Result;
 
-    /*
-    float Affect_Strength = 1.f;
-    float Affect_Damage = 1.f;
-    float Affect_Health = 1.f;
-    float Affect_Speed = 1.f;
-    float Affect_Defense = 1.f;
-    // All resistances
-    float Affect_Heat_Resistance = 1.f;
-    float Affect_Cold_Resistance = 1.f;
-    float Affect_Electricity_Resistance = 1.f;
-    float Affect_Poison_Resistance = 1.f;
-    float Affect_Acid_Resistance = 1.f;
-    float Affect_Radiation_Resistance = 1.f;
-    float Affect_Psychic_Resistance = 1.f;
-    float Affect_Sonic_Resistance = 1.f;
-    float Affect_Light_Resistance = 1.f;
-    float Affect_Darkness_Resistance = 1.f;
-    float Affect_Magic_Resistance = 1.f;
-    float Affect_Physical_Resistance = 1.f;
-    float Affect_Mental_Resistance = 1.f;
-    float Affect_Astral_Resistance = 1.f;
-    float Affect_Dimensional_Resistance = 1.f;
-    float Affect_Nuclear_Resistance = 1.f;
-    float Affect_Biological_Resistance = 1.f;
-    float Affect_Natural_Resistance = 1.f;
-    float Affect_Explosive_Resistance = 1.f;
-    //--
-    float Affect_Accuracy = 1.f;
-    float Affect_Evasion = 1.f;
-    float Affect_Crit_Chance = 1.f;
-    float Affect_Crit_Power = 1.f;
-    float Affect_Size = 1.f;
-    */
+    for (ATTRIBUTE_TYPES Current_Attribute = (ATTRIBUTE_TYPES)0; (int)Current_Attribute < (int)ATTRIBUTE_TYPES::END; Current_Attribute = (ATTRIBUTE_TYPES)((int)Current_Attribute + 1)){
+        
+        // Lot if the current attribute is even given to the result.
+        if (Float_Range(0.0f, 1.0f) < ATTRIBUTE_Probabilities[(int)Current_Attribute]){
 
-    Result.Affect_Strength = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Damage = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Health = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Speed = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Defense = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    // All resistances
-    Result.Affect_Heat_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Cold_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Electricity_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Poison_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Acid_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Radiation_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Psychic_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Sonic_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Light_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Darkness_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Magic_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Physical_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Mental_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Astral_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Dimensional_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Nuclear_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Biological_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Natural_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Explosive_Resistance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    //---
-    Result.Affect_Accuracy = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Evasion = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Crit_Chance = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Crit_Power = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
-    Result.Affect_Size = Float_Range(1.f - (1.f / (float)e->Get_Class()), 1.f + (1.f / (float)e->Get_Class()));
+            float Min = 1.f - (1.f / (float)e->Get_Class());
+            float Max = 1.f + (1.f / (float)e->Get_Class());
+
+            Result.Attributes[Current_Attribute] = Float_Range(Min, Max);
+        }
+    }
 
     return Result;
 }
@@ -129,11 +75,11 @@ ATTRIBUTES Lot_Attributes(Entity* e){
 vector<Entity*> Lot_Items(Entity* e){
     vector<Entity*> Result;
 
-    int Tmp_Size = e->Get_Size();
+    int Tmp_Size = e->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER);
 
     Entity* Current = new Entity(e->Get_Position(), ENTITY_TYPE::ITEM);
 
-    for (;Current->Get_Size() < Tmp_Size; Tmp_Size -= Current->Get_Size()){
+    for (;Current->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER) < Tmp_Size; Tmp_Size -= Current->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER)){
         Result.push_back(Current);
         Current = new Entity(e->Get_Position(), ENTITY_TYPE::ITEM);
     }
@@ -142,7 +88,6 @@ vector<Entity*> Lot_Items(Entity* e){
 }
 
 Entity::Entity(Location location, ENTITY_TYPE type){
-
     Position = location;
     Type = type;
     Rank = Lot_Rank(location);
@@ -161,14 +106,14 @@ Entity::Entity(Location location, ENTITY_TYPE type){
 
 void Entity::Update_Stats(){
     // We will decrement the Tmp_Size until the next item wont "fit"
-    int Tmp_Size = Base_Stats.Power;
+    int Tmp_Size = Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER);
 
     ATTRIBUTES New_Stats = Attributes;    
 
     for (Entity* item : Holding){
         if (item->Type == ENTITY_TYPE::ITEM){
-            if (Tmp_Size - item->Base_Stats.Power >= 0){
-                Tmp_Size -= item->Base_Stats.Power;
+            if (Tmp_Size - item->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER) >= 0){
+                Tmp_Size -= item->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER);
                 New_Stats += item->Attributes;
             }
         }
