@@ -186,6 +186,14 @@ public:
 enum class ENTITY_TYPE{
     UNKNOWN,
     ITEM,
+    FLOOR,
+    WALL,
+    DOOR,
+    CHEST,
+    LIVING,
+    TRAP,
+
+    END
 };
 
 // Rarity class like in Overlord
@@ -490,6 +498,389 @@ public:
     }
 };
 
+enum class ROLE{
+    // These are roles that a entity can have, the roles are categorized into different themes.
+    // NOTE: The roles do not contain races/species.
+
+    // Adventurer roles
+    HEALER,         // 5% to get
+    TANK,           // 5% to get
+    DPS,            // 5% to get
+    MAGE,           // 5% to get
+    SUPPORT,        // 5% to get
+    ZOOLOGIST,      // 1% to get
+    ARCHEOLOGIST,   // 1% to get
+    HUNTER,         // 2.5% to get
+    TRADER,         // 2.5% to get
+
+    // Village roles
+    BUILDER,        // 5% to get
+    FARMER,         // 5% to get
+    MINER,          // 5% to get
+    GUARD,          // 3% to get
+    WARDEN,         // 1% to get
+    SCOUT,          // 10% to get
+    HERO,           // 0.001% to get
+    BARD,           // 6% to get
+    NINJA,          // 2% to get
+
+    // STRONGHOLD roles
+    WIZARD,         // 5% to get
+    NECROMANCER,    // 2% to get
+
+    // Forest watcher
+    FOREST_WATCHER, // 11% to get
+    GARDENER,       // 5% to get
+    WITCH,          // 2% to get
+
+    // Town roles
+    WITCH_DOCTOR,   // 0.01% to get
+    PRIEST,         // 5% to get
+    SHAMAN,         // 5% to get
+    MAJOR,          // 1% to get
+    
+    // Army roles
+    GENERAL,        // 0.1% to get
+    COMMANDER,      // 0.2% to get
+    CAPTAIN,        // 0.3% to get
+    LIEUTENANT,     // 0.4% to get
+    SERGEANT,       // 0.5% to get
+    SOLDIER,        // 10% to get
+    ARCHER,         // 10% to get
+    SWORDSMAN,      // 5% to get
+    PIKEMAN,        // 3% to get
+    KNIGHT,         // 0.1% to get
+
+    // castle roles
+    PALADIN,        // 0.01% to get
+    ARCHMAGE,       // 0.01% to get
+    BISHOP,         // 0.01% to get
+    KING,           // 0.001% to get
+    QUEEN,          // 0.001% to get
+    PRINCE,         // 0.002% to get
+    PRINCESS,       // 0.002% to get
+    NOBEL,          // 0.1% to get
+    BARON,          // 0.1% to get
+    BARONESS,       // 0.1% to get
+    COUNT,          // 0.1% to get
+    COUNTESS,       // 0.1% to get
+    DUKE,           // 0.1% to get
+    DUCHESS,        // 0.1% to get
+    MARQUIS,        // 0.1% to get
+    MARQUESS,       // 0.1% to get
+    EARL,           // 0.1% to get
+
+    // monster roles
+    BOSS,           // 0.01% to get
+    ELITE,          // 0.1% to get
+    MINIBOSS,       // 0.2% to get
+    MINIELITE,      // 0.5% to get
+    MINION,         // 20% to get
+    SLAVE,          // 15% to get
+
+    END,
+};
+
+const double ROLE_Probabilities[] = {
+    0.05,   // HEALER
+    0.05,   // TANK
+    0.05,   // DPS
+    0.05,   // MAGE
+    0.05,   // SUPPORT
+    0.01,   // ZOOLOGIST
+    0.01,   // ARCHEOLOGIST
+    0.025,  // HUNTER
+    0.025,  // TRADER
+
+    0.05,   // BUILDER
+    0.05,   // FARMER
+    0.05,   // MINER
+    0.03,   // GUARD
+    0.01,   // WARDEN
+    0.1,    // SCOUT
+    0.00001,// HERO
+    0.06,   // BARD
+    0.02,   // NINJA
+
+    0.05,   // WIZARD
+    0.02,   // NECROMANCER
+
+    0.11,   // FOREST_WATCHER
+    0.05,   // GARDENER
+    0.02,   // WITCH
+
+    0.0001, // WITCH_DOCTOR
+    0.05,   // PRIEST
+    0.05,   // SHAMAN
+    0.01,   // MAJOR
+
+    0.001,  // GENERAL
+    0.002,  // COMMANDER
+    0.003,  // CAPTAIN
+    0.004,  // LIEUTENANT
+    0.005,  // SERGEANT
+    0.1,    // SOLDIER
+    0.1,    // ARCHER
+    0.05,   // SWORDSMAN
+    0.03,   // PIKEMAN
+    0.001,  // KNIGHT
+
+    0.0001, // PALADIN
+    0.0001, // ARCHMAGE
+    0.0001, // BISHOP
+    0.00001,// KING
+    0.00001,// QUEEN
+    0.00002,// PRINCE
+    0.00002,// PRINCESS
+    0.001,  // NOBEL
+    0.001,  // BARON
+    0.001,  // BARONESS
+    0.001,  // COUNT
+    0.001,  // COUNTESS
+    0.001,  // DUKE
+    0.001,  // DUCHESS
+    0.001,  // MARQUIS
+    0.001,  // MARQUESS
+    0.001,  // EARL
+
+    0.0001, // BOSS
+    0.001,  // ELITE
+    0.002,  // MINIBOSS
+    0.005,  // MINIELITE
+    0.2,    // MINION
+    0.15,   // SLAVE
+};
+
+enum class SPECIES{
+    // INSECT
+    BEE,            // 5% to get 
+    ANT,            // 5% to get
+    WASP,           // 5% to get
+    SPIDER,         // 5% to get
+    SCORPION,       // 5% to get
+    MOTH,           // 5% to get
+
+    // DRAGON
+    WYVERN,         // 0.001% to get
+    ALBERTINE,      // 0.001% to get
+    DRAAKAR,        // 0.001% to get
+    DRACON,         // 0.001% to get
+    DRAKE,          // 0.0001% to get life has obstacles get over them.
+    STORMWING,      // 0.001% to get
+    FIRESOTRM,      // 0.001% to get
+    ICECUTTER,      // 0.001% to get
+    SHADOWHARBINGER,// 0.001% to get
+    GODCENT,        // 0.00001% to get
+
+    // MACHINE
+    CYBORG,         // 0.01% to get
+    ROBOT,          // 0.01% to get
+    CYBERNETIC,     // 0.01% to get
+    AUTOMATON,      // 0.01% to get
+    MECHANICAL,     // 0.01% to get
+    NANOBOT,        // 0.01% to get
+    MICROBOT,       // 0.01% to get
+    AI,             // 0.01% to get
+    ANDROID,        // 0.01% to get
+    BROKENGOD,      // 0.00001% to get
+    MECHA,          // 0.01% to get
+
+    // PLANT
+    TREE,           // 10% to get
+    FLOWER,         // 5% to get
+    BUSH,           // 5% to get
+    GRASS,          // 10% to get
+    WEED,           // 5% to get
+    MUSHROOM,       // 5% to get
+    FUNGUS,         // 5% to get
+
+    // ELEMENTAL
+    FIRE,           // 0.01% to get
+    ICE,            // 0.01% to get
+    EARTH,          // 0.01% to get
+    WATER,          // 0.01% to get
+    AIR,            // 0.01% to get
+    LIGHTNING,      // 0.01% to get
+    WIND,           // 0.01% to get
+    LIGHT,          // 0.001% to get
+    DARKNESS,       // 0.001% to get
+
+    // GOD
+    // conceptual categorical gods
+    WAR,            // 0.00001% to get
+    PEACE,          // 0.00001% to get
+    DEATH,          // 0.00001% to get
+    LIFE,           // 0.0001% to get
+    HUNGER,         // 0.00001% to get
+    THIRST,         // 0.00001% to get
+    SLEEP,          // 0.00001% to get
+    LOVE,           // 0.00001% to get
+    HATE,           // 0.00001% to get
+    HARMONY,        // 0.00001% to get
+    MIND,           // 0.00001% to get
+    BODY,           // 0.00001% to get
+    SPIRIT,         // 0.00001% to get
+    FATE,           // 0.000001% to get
+    DESTINY,        // 0.000001% to get
+    TIME,           // 0.000001% to get
+
+    // elemental categorized gods
+    FIRE,           // 0.00001% to get
+    ICE,            // 0.00001% to get
+    EARTH,          // 0.00001% to get
+    WATER,          // 0.00001% to get
+    AIR,            // 0.00001% to get
+    LIGHTNING,      // 0.00001% to get
+    WIND,           // 0.00001% to get
+    LIGHT,          // 0.00001% to get
+    DARKNESS,       // 0.00001% to get
+    MAGIC,          // 0.00001% to get
+    RADIATION,      // 0.00001% to get
+    ELECTRICITY,    // 0.00001% to get
+    PLASMA,         // 0.00001% to get
+    GRAVITY,        // 0.00001% to get
+    MAGNETISM,      // 0.00001% to get
+    MATTER,         // 0.00001% to get
+    ENERGY,         // 0.00001% to get
+    DARKENERGY,     // 0.00001% to get
+    DARKMATTER,     // 0.00001% to get
+    LIGHTENERGY,    // 0.00001% to get
+    LIGHTMATTER,    // 0.00001% to get
+    HEAT,           // 0.00001% to get
+    COLD,           // 0.00001% to get
+    DARK,           // 0.00001% to get
+    LIGHT,          // 0.00001% to get
+    ELECTRICITY,    // 0.00001% to get
+    PLASMA,         // 0.00001% to get
+    GRAVITY,        // 0.00001% to get
+
+    // H.P Lovefractian conspetualized horror types
+    OLDONE,         // 0.000001% to get
+    FIRSTONE,       // 0.000001% to get
+    THEGREATOLDONE, // 0.000001% to get
+    SHAPESHIFTER,   // 0.000001% to get
+
+    // SCP & H.P Lovecraft Cycle
+    THETHING,                   // 0.0000001% to get
+    THETHINGTHATSHOULDNOTBE,    // 0.0000001% to get
+    THETHINGTHATCANNOTBE,       // 0.0000001% to get
+    THETHINGTHATISNOT,          // 0.0000001% to get
+    THETHINGTHATWASNOT,         // 0.0000001% to get
+    THETHINGTHATWILLBE,         // 0.0000001% to get
+    THETHINGTHATWILLNOTBE,      // 0.0000001% to get
+    THETHINGTHATIS,             // 0.0000001% to get
+    THETHINGTHATWAS,            // 0.0000001% to get
+
+    // DOMAIN HOLDER
+    DOMAINHOLDER,               // 0.00000000000001% to get
+
+    // FOREST FOLK
+    DRUID,          // 2% to get
+    GOBLIN,         // 10% to get
+    ORC,            // 10% to get
+    TROLL,          // 5% to get
+    ELF,            // 10% to get
+    DWARF,          // 10% to get
+    FAIRY,          // 1% to get
+    NAGA,           // 1% to get
+    HOBGOBLIN,      // 5% to get
+    HUMAN,          // 50% to get
+
+    END,
+};
+
+const double SPECIES_Probabilities[] = {
+    0.05,   // BUSH
+    0.1,    // GRASS
+    0.05,   // WEED
+    0.05,   // MUSHROOM
+    0.05,   // FUNGUS
+
+    0.0001, // FIRE
+    0.0001, // ICE
+    0.0001, // EARTH
+    0.0001, // WATER
+    0.0001, // AIR
+    0.0001, // LIGHTNING
+    0.0001, // WIND
+    0.0001, // LIGHT
+    0.0001, // DARKNESS
+
+    0.000001,  // WAR
+    0.000001,  // PEACE
+    0.000001,  // DEATH
+    0.000001,  // LIFE
+    0.000001,  // HUNGER
+    0.000001,  // THIRST
+    0.000001,  // SLEEP
+    0.000001,  // LOVE
+    0.000001,  // HATE
+    0.000001,  // HARMONY
+    0.000001,  // MIND
+    0.000001,  // BODY
+    0.000001,  // SPIRIT
+    0.000001,  // FATE
+    0.000001,  // DESTINY
+    0.000001,  // TIME
+
+    0.000001,  // FIRE
+    0.000001,  // ICE
+    0.000001,  // EARTH
+    0.000001,  // WATER
+    0.000001,  // AIR
+    0.000001,  // LIGHTNING
+    0.000001,  // WIND
+    0.000001,  // LIGHT
+    0.000001,  // DARKNESS
+    0.000001,  // MAGIC
+    0.000001,  // RADIATION
+    0.000001,  // ELECTRICITY
+    0.000001,  // PLASMA
+    0.000001,  // GRAVITY
+    0.000001,  // MAGNETISM
+    0.000001,  // MATTER
+    0.000001,  // ENERGY
+    0.000001,  // DARKENERGY
+    0.000001,  // DARKMATTER
+    0.000001,  // LIGHTENERGY
+    0.000001,  // LIGHTMATTER
+    0.000001,  // HEAT
+    0.000001,  // COLD
+    0.000001,  // DARK
+    0.000001,  // LIGHT
+    0.000001,  // ELECTRICITY
+    0.000001,  // PLASMA
+    0.000001,  // GRAVITY
+    
+    0.0000001,  // OLDONE
+    0.0000001,  // FIRSTONE
+    0.0000001,  // THEGREATOLDONE
+    0.0000001,  // SHAPESHIFTER
+
+    0.00000001, // THETHING
+    0.00000001, // THETHINGTHATSHOULDNOTBE
+    0.00000001, // THETHINGTHATCANNOTBE
+    0.00000001, // THETHINGTHATISNOT
+    0.00000001, // THETHINGTHATWASNOT
+    0.00000001, // THETHINGTHATWILLBE
+    0.00000001, // THETHINGTHATWILLNOTBE
+    0.00000001, // THETHINGTHATIS
+    0.00000001, // THETHINGTHATWAS
+
+    0.000000000000001, // DOMAINHOLDER
+
+    0.02,   // DRUID
+    0.1,    // GOBLIN
+    0.1,    // ORC
+    0.05,   // TROLL
+    0.1,    // ELF
+    0.1,    // DWARF
+    0.01,   // FAIRY
+    0.01,   // NAGA
+    0.05,   // HOBGOBLIN
+    0.5,    // HUMAN
+};
+
 class Entity{
 protected:
     Location Position;
@@ -498,6 +889,8 @@ protected:
     CLASS Class;
     STATS Base_Stats;
     ATTRIBUTES Attributes;
+    vector<ROLE> Roles;
+    SPECIES Specie;
 
     // For AST
     Entity* Holder = nullptr;
@@ -512,6 +905,12 @@ public:
     inline Location Get_Position() { return Position; }
     inline float Get_Attribute(ATTRIBUTE_TYPES type){ return Attributes[type] * Base_Stats.Power; }
 
+    inline string Get_Name();
 };
+
+string To_String(Entity* e){
+    
+}
+
 
 #endif

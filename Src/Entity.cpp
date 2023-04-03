@@ -37,6 +37,14 @@ CLASS Lot_Class(Location location){
     return Get_Rarity<CLASS>(location, CLASS_Probabilities);
 }
 
+ROLE Lot_Role(Location location){
+    return Get_Rarity<ROLE>(location, ROLE_Probabilities);
+}
+
+SPECIES Lot_Species(Location location){
+    return Get_Rarity<SPECIES>(location, SPECIES_Probabilities);
+}
+
 int Int_Range(int min, int max){
     return min + (rand() % (max - min + 1));
 }
@@ -96,6 +104,16 @@ Entity::Entity(Location location, ENTITY_TYPE type){
     Base_Stats = Lot_Stats(this);
     Attributes = Lot_Attributes(this);
 
+    // lot the roles
+    for (int i = 0; i < Int_Range(0, Base_Stats.Power); i++){
+        Roles.push_back(
+            Lot_Role(location)
+        );
+    }
+
+    // lot the species
+    Specie = Lot_Species(location);
+
     // Lot random items for the entity
     if (Type != ENTITY_TYPE::ITEM){
 
@@ -118,4 +136,11 @@ void Entity::Update_Stats(){
             }
         }
     }
+}
+
+string Entity::Get_Name(){
+    string Result = "";
+
+
+
 }
