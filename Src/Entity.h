@@ -234,6 +234,24 @@ const double CLASS_Probabilities[] = {
     0.01 * 0.0000000000000001, // WORLD
 };
 
+// Descriptive names about the class
+const vector<const char*> CLASS_Names[] = {
+    {"common", "low quality", "low level", "crappy", "worthless", "useless", "garbage", "trash"},                           // LOW
+    {"uncommon", "medium quality", "medium level", "decent", "average", "mediocre", "okay", "good"},                        // MIDDLE
+    {"rare", "high quality", "high level", "fine", "valuable", "nice", "excellent", "great"},                               // HIGH
+    {"epic", "top quality", "top level", "epic", "legendary", "awesome", "amazing"},                               // TOP
+    {"legacy", "rustic", "old", "ancient", "vintage", "antique", "rusty"},                                                  // LEGACY
+    {"magic", "other world", "mysterious", "enchanted"},                                                                // MAGICAL
+    {"rare", "valuable", "shiny", "epic"},                                                      // RARE
+    {"relic", "runic", "rune", "craftian"},                                              // RELIC
+    {"legendary", "mythical", "secret"},              // LEGENDARY
+    {"divine", "holy", "glow", "angel"},                                      // DIVINE
+    {"guild", "treasure", "nobel"},                                              // GUILD
+    {"champion", "nation", "perfect"},                      // CHAMPION
+    {"hero", "high-champion", "god slayer", "destruction", "one piece"},                                                      // HERO
+    {"world", "universe", "multiverse", "omnipotent", "omniscient", "god", "domain"}
+};
+
 // The legendary Ascendancy rank from SCP-733
 enum class RANK{
     NONE,           // 99% of all
@@ -258,6 +276,17 @@ const double RANK_Probabilities[] = {
     0.99 * 0.0000000001,    // GOD
     0.99 * 0.000000000001,  // TRUE_GOD
     0.01 * 0.0000000000001, // DOMAIN_HOLDER
+};
+
+const vector<const char*> RANK_Names[] = {
+    {"", "plain", "boring", "creped", "low-life"}, // NONE
+    {"supernatural", "other worldly", "mysterious", "magician"},    // SUPERNATURAL
+    {"half blood", "creped", "disgusting", "waste", "trash"},    // HALF_BLOOD
+    {"demigod", "half god", "half celestial", "half divine", "demon", "unholy", "creped"},  // DEMIGOD
+    {"false god", "false deity", "worshipped", "holy"},    // FALSE_GOD
+    {"god", "deity", "celestial", "divine", "legendary"},    // GOD
+    {"true god", "one above gods", "La Persona Superiore a Dio", "puppeteer"},  // TRUE_GOD
+    {"world keeper", "world", "universe", "truth", "entropy", "from far beyond"} // DOMAIN_HOLDER
 };
 
 class Location{
@@ -340,18 +369,6 @@ public:
     }
 };
 
-class STATS{
-public:
-    // Power describes everything, where 1 power equals to:
-    // 1 Strength, 1 Damage, 1 Health, 1 Speed, 1 Defense, 1 Resistance, 1 Accuracy, 1 Evasion, 1 Crit Chance, 1 Crit Power
-    // Then the equipped items decrease certain aspects or increase them.
-    // The power is them multiplied by the RANK factor.
-    int Power = 1;
-
-    STATS() = default;
-
-};
-
 enum class ATTRIBUTE_TYPES{
     STRENGTH,               // 10% to get
     DAMAGE,                 // 10% to get
@@ -383,6 +400,21 @@ enum class ATTRIBUTE_TYPES{
     BIOLOGICAL_RESISTANCE,  // 0.001% to get
     NATURAL_RESISTANCE,     // 0.001% to get
     EXPLOSIVE_RESISTANCE,   // 0.1% to get
+
+    INTELLIGENCE,           // 5% to get
+    WISDOM,                 // 5% to get
+    CHARISMA,               // 5% to get
+    PERCEPTION,             // 5% to get
+    LUCK,                   // 5% to get
+    WILLPOWER,              // 5% to get
+    MEMORY,                 // 5% to get
+    CREATIVITY,             // 5% to get
+    EMPATHY,                // 5% to get
+    LOGIC,                  // 5% to get
+    REASONING,              // 5% to get
+    INSIGHT,                // 5% to get
+    AWARENESS,              // 5% to get
+    INSTINCT,               // 5% to get  
 
     END
 };
@@ -419,7 +451,72 @@ const double ATTRIBUTE_Probabilities[] = {
     0.00001,    // NATURAL_RESISTANCE
     0.0001, // EXPLOSIVE_RESISTANCE
 
+    0.05,   // INTELLIGENCE
+    0.05,   // WISDOM
+    0.05,   // CHARISMA
+    0.05,   // PERCEPTION
+    0.05,   // LUCK
+    0.05,   // WILLPOWER
+    0.05,   // MEMORY
+    0.05,   // CREATIVITY
+    0.05,   // EMPATHY
+    0.05,   // LOGIC
+    0.05,   // REASONING
+    0.05,   // INSIGHT
+    0.05,   // AWARENESS
+    0.05,   // INSTINCT
+
     1.0,    // END
+};
+
+const vector<const char*> ATTRIBUTE_Names[] = {
+    {"Str", "Strength"},
+    {"Dam", "Damage"},
+    {"HP", "Health"},
+    {"Spd", "Speed"},
+    {"Def", "Defense"},
+    {"Acc", "Accuracy"},
+    {"Eva", "Evasion"},
+    {"Crit", "Critical Chance"},
+    {"CritPwr", "Critical Power"},
+    {"Size", "Size Multiplier"},
+    // All resistances      
+    {"Heat", "Heat Resistance"},
+    {"Cold", "Cold Resistance"},
+    {"Elec", "Electricity Resistance"},
+    {"Pois", "Poison Resistance"},
+    {"Acid", "Acid Resistance"},
+    {"Rad", "Radiation Resistance"},
+    {"Psy", "Psychic Resistance"},
+    {"Sonic", "Sonic Resistance"},
+    {"Light", "Light Resistance"},
+    {"Dark", "Darkness Resistance"},
+    {"Magic", "Magic Resistance"},
+    {"Phys", "Physical Resistance"},
+    {"Ment", "Mental Resistance"},
+    {"Astral", "Astral Resistance"},
+    {"Dim", "Dimensional Resistance"},
+    {"Nuke", "Nuclear Resistance"},
+    {"Bio", "Biological Resistance"},
+    {"Nat", "Natural Resistance"},
+    {"Exp", "Explosive Resistance"},
+
+    {"Int", "Intelligence"},
+    {"Wis", "Wisdom"},
+    {"Cha", "Charisma"},
+    {"Per", "Perception"},
+    {"Luck", "Luck"},
+    {"Will", "Willpower"},
+    {"Mem", "Memory"},
+    {"Crea", "Creativity"},
+    {"Emp", "Empathy"},
+    {"Log", "Logic"},
+    {"Rea", "Reasoning"},
+    {"Ins", "Insight"},
+    {"Awa", "Awareness"},
+    {"Ins", "Instinct"},
+
+    {"", ""},
 };
 
 class ATTRIBUTES{
@@ -494,6 +591,80 @@ public:
     ATTRIBUTES operator/(const ATTRIBUTES& attr){
         ATTRIBUTES temp = *this;
         temp /= attr;
+        return temp;
+    }
+};
+
+class STATS{
+public:
+    // Power describes everything, where 1 power equals to:
+    // 1 Strength, 1 Damage, 1 Health, 1 Speed, 1 Defense, 1 Resistance, 1 Accuracy, 1 Evasion, 1 Crit Chance, 1 Crit Power
+    // Then the equipped items decrease certain aspects or increase them.
+    // The power is them multiplied by the RANK factor.
+    int Power = 1;
+
+    ATTRIBUTES Prefixes;
+    ATTRIBUTES Suffixes;
+
+    STATS() = default;
+
+    // Operator overloads
+    STATS& operator=(const STATS& stats){
+        Power = stats.Power;
+        Prefixes = stats.Prefixes;
+        Suffixes = stats.Suffixes;
+        return *this;
+    }
+
+    STATS& operator+=(const STATS& stats){
+        Power += stats.Power;
+        Prefixes += stats.Prefixes;
+        Suffixes += stats.Suffixes;
+        return *this;
+    }
+
+    STATS& operator-=(const STATS& stats){
+        Power -= stats.Power;
+        Prefixes -= stats.Prefixes;
+        Suffixes -= stats.Suffixes;
+        return *this;
+    }
+
+    STATS& operator*=(const STATS& stats){
+        Power *= stats.Power;
+        Prefixes *= stats.Prefixes;
+        Suffixes *= stats.Suffixes;
+        return *this;
+    }
+
+    STATS& operator/=(const STATS& stats){
+        Power /= stats.Power;
+        Prefixes /= stats.Prefixes;
+        Suffixes /= stats.Suffixes;
+        return *this;
+    }
+
+    STATS operator+(const STATS& stats){
+        STATS temp = *this;
+        temp += stats;
+        return temp;
+    }
+
+    STATS operator-(const STATS& stats){
+        STATS temp = *this;
+        temp -= stats;
+        return temp;
+    }
+
+    STATS operator*(const STATS& stats){
+        STATS temp = *this;
+        temp *= stats;
+        return temp;
+    }
+
+    STATS operator/(const STATS& stats){
+        STATS temp = *this;
+        temp /= stats;
         return temp;
     }
 };
@@ -649,6 +820,74 @@ const double ROLE_Probabilities[] = {
     0.005,  // MINIELITE
     0.2,    // MINION
     0.15,   // SLAVE
+};
+
+const vector<const char*> ROLE_Names[] = {
+    {"healer", "medic", "doctor", "nurse", "surgeon", "therapist", "psychiatrist", "pharmacist"},
+    {"tank", "defender", "protector", "guardian", "shield", "shielder", "shieldbearer", "shieldguard"},
+    {"dps", "damage", "damage dealer", "damage dealer", "damage dealer", "damage dealer", "damage dealer", "damage dealer"},
+    {"mage", "wizard", "sorcerer", "warlock", "enchanter", "conjurer", "illusionist", "illusionist"},
+    {"support", "supporter", "supporter", "supporter", "supporter", "supporter", "supporter", "supporter"},
+    {"zookeeper", "zoologist", "zoologist", "zoologist", "zoologist", "zoologist", "zoologist", "zoologist"},
+    {"archaeologist"},
+    {"hunter", "hunter", "hunter", "hunter", "hunter", "hunter", "hunter", "hunter"},
+    {"trader", "trader", "trader", "trader", "trader", "trader", "trader", "trader"},
+
+    {"builder", "builder", "builder", "builder", "builder", "builder", "builder", "builder"},
+    {"farmer", "farmer", "farmer", "farmer", "farmer", "farmer", "farmer", "farmer"},
+    {"miner", "miner", "miner", "miner", "miner", "miner", "miner", "miner"},
+    {"guard", "guard", "guard", "guard", "guard", "guard", "guard", "guard"},
+    {"warden", "warden", "warden", "warden", "warden", "warden", "warden", "warden"},
+    {"scout", "scout", "scout", "scout", "scout", "scout", "scout", "scout"},
+    {"hero", "hero", "hero", "hero", "hero", "hero", "hero", "hero"},
+    {"bard", "bard", "bard", "bard", "bard", "bard", "bard", "bard"},
+    {"ninja", "ninja", "ninja", "ninja", "ninja", "ninja", "ninja", "ninja"},
+
+    {"wizard"},
+    {"necromancer"},
+
+    {"forest watcher"},
+    {"gardener"},
+    {"witch"},
+    {"witch doctor"},
+    {"priest"},
+    {"shaman"},
+    {"major"},
+    {"general"},
+    {"commander"},
+    {"captain"},
+    {"lieutenant"},
+    {"sergeant"},
+    {"soldier"},
+    {"archer"},
+    {"swordsman"},
+    {"pikeman"},
+    {"knight"},
+    {"paladin"},
+    {"archmage"},
+    {"bishop"},
+    {"king"},
+    {"queen"},
+    {"prince"},
+    {"princess"},
+    {"noble"},
+    {"baron"},
+    {"baroness"},
+    {"count"},
+    {"countess"},
+    {"duke"},
+    {"duchess"},
+    {"marquis"},
+    {"marquess"},
+    {"earl"},
+    {"boss"},
+    {"elite"},
+    {"miniboss"},
+    {"minielite"},
+    {"minion"},
+    {"slave"},
+
+    {"none"}
 };
 
 enum class SPECIES{
@@ -881,14 +1120,192 @@ const double SPECIES_Probabilities[] = {
     0.5,    // HUMAN
 };
 
+const string SPECIES_Names[] = {
+    "bee",
+    "butterfly",
+    "caterpillar",
+    "dragonfly",
+    "fly",
+    "grasshopper",
+    "ladybug",
+    "mosquito",
+    "moth",
+    "spider",
+    "tick",
+    "wasp",
+
+    "ant",
+    "ape",
+    "bear",
+    "bird",
+    "boar",
+    "buffalo",
+    "cat",
+    "chicken",
+    "cow",
+    "crocodile",
+    "dog",
+    "donkey",
+    "duck",
+    "elephant",
+    "fish",
+    "fox",
+    "frog",
+    "giraffe",
+    "goat",
+    "gorilla",
+    "horse",
+    "kangaroo",
+    "lion",
+    "monkey",
+    "mouse",
+    "panda",
+    "pig",
+    "rabbit",
+    "rat",
+    "rhinoceros",
+    "sheep",
+    "snake",
+    "squirrel",
+    "tiger",
+    "turtle",
+    "wolf",
+    "zebra",
+
+    "bush",
+    "grass",
+    "weed",
+    "mushroom",
+    "fungus",
+
+    "fire",
+    "ice",
+    "earth",
+    "water",
+    "air",
+    "lightning",
+    "wind",
+    "light",
+    "darkness",
+
+    "war",
+    "peace",
+    "death",
+    "life",
+    "hunger",
+    "thirst",
+    "sleep",
+    "love",
+    "hate",
+    "harmony",
+    "mind",
+    "body",
+    "spirit",
+    "fate",
+    "destiny",
+    "time",
+
+    "fire",
+    "ice",
+    "earth",
+    "water",
+    "air",
+    "lightning",
+    "wind",
+    "light",
+    "darkness",
+    "magic",
+    "radiation",
+    "electricity",
+    "plasma",
+    "gravity",
+    "magnetism",
+    "matter",
+    "energy",
+    "darkenergy",
+    "darkmatter",
+    "lightenergy",
+    "lightmatter",
+    "heat",
+    "cold",
+    "dark",
+    "light",
+    "electricity",
+    "plasma",
+    "gravity",
+
+    "old one",
+    "first one",
+    "the great old one",
+    "shape shifter",
+
+    "the thing",
+    "the thing that should not be",
+    "the thing that cannot be",
+    "the thing that is not",
+    "the thing that was not",
+    "the thing that will be",
+    "the thing that will not be",
+    "the thing that is",
+    "the thing that was",
+
+    "domain holder",
+
+    "druid",
+    "goblin",
+    "orc",
+    "troll",
+    "elf",
+    "dwarf",
+    "fairy",
+    "naga",
+    "hobgoblin",
+    "human",
+};
+
+const vector<string> Positives = {
+    "superior",
+    "great",
+    "greater",
+    "wise",
+    "powerful",
+    "strong",
+    "mighty",
+    "brave",
+    "courageous",
+    "fearless",
+    "fierce",
+    "bold",
+    "daring",
+    "valiant",
+};
+
+const vector<string> Negatives = {
+    "inferior",
+    "weak",
+    "weaker",
+    "feeble",
+    "fearful",
+    "cowardly",
+    "frightened",
+    "timid",
+    "scared",
+    "shy",
+    "shit",
+    "bad",
+    "rotten",
+};
+
 class Entity{
 protected:
+    string Name;
+    string Description;
+
     Location Position;
     ENTITY_TYPE Type;
     RANK Rank;
     CLASS Class;
     STATS Base_Stats;
-    ATTRIBUTES Attributes;
     vector<ROLE> Roles;
     SPECIES Specie;
 
@@ -903,9 +1320,11 @@ public:
     inline RANK Get_Rank(){ return Rank; }
     inline CLASS Get_Class(){ return Class; }
     inline Location Get_Position() { return Position; }
-    inline float Get_Attribute(ATTRIBUTE_TYPES type){ return Attributes[type] * Base_Stats.Power; }
+    inline float Get_Attribute(ATTRIBUTE_TYPES type);
 
-    inline string Get_Name();
+    inline vector<ATTRIBUTE_TYPES> Get_Prefixes();
+    inline string Construct_Name();
+    inline string Construct_Description();
 };
 
 string To_String(Entity* e){
