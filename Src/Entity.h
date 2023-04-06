@@ -183,6 +183,169 @@ public:
     }
 };
 
+const vector<string> Name_Table = {
+    "Aaron",
+    "Abraham",
+    "Adam",
+    "Adrian",
+    "Alan",
+    "Albert",
+    "Alexander",
+    "Andrew",
+    "Anthony",
+    "Arthur",
+    "Austin",
+    "Benjamin",
+    "Bernard",
+    "Billy",
+    "Blake",
+    "Bob",
+    "Bobby",
+    "Bradley",
+    "Brandon",
+    "Brendan",
+    "Brian",
+    "Bruce",
+    "Bryan",
+    "Carl",
+    "Charles",
+    "Christian",
+    "Christopher",
+    "Clarence",
+    "Clifford",
+    "Clifton",
+    "Clinton",
+    "Colin",
+    "Connor",
+    "Curtis",
+    "Dale",
+    "Daniel",
+    "Darren",
+    "David",
+    "Dean",
+    "Dennis",
+    "Derek",
+    "Derrick",
+    "Dillon",
+    "Dominic",
+    "Donald",
+    "Douglas",
+    "Dylan",
+    "Edward",
+    "Eric",
+    "Eugene",
+    "Evan",
+    "Frank",
+    "Franklin",
+    "Fred",
+    "Frederick",
+    "Gary",
+    "George",
+    "Gerald",
+    "Gilbert",
+    "Gordon",
+    "Gregory",
+    "Harold",
+    "Harry",
+    "Henry",
+    "Howard",
+    "Hugh",
+    "Ian",
+    "Isaac",
+    "Jack",
+    "Jacob",
+    "Jake",
+    "James",
+    "Jason",
+    "Jeffrey",
+    "Jeremy",
+    "Jerry",
+    "Joe",
+    "Joel",
+    "John",
+    "Jonathan",
+    "Joseph",
+    "Joshua",
+    "Justin",
+    "Keith",
+    "Kenneth",
+    "Kevin",
+    "Kyle",
+    "Lance",
+    "Larry",
+    "Lawrence",
+    "Lee",
+    "Leo",
+    "Leonard",
+    "Leroy",
+    "Leslie",
+    "Lester",
+    "Lewis",
+    "Liam",
+    "Lloyd",
+    "Logan",
+    "Louis",
+    "Lucas",
+    "Luther",
+    "Malcolm",
+    "Marcus",
+    "Marvin",
+    "Martin",
+    "Matthew",
+    "Maurice",
+    "Max",
+    "Melvin",
+    "Michael",
+    "Milton",
+    "Nathan",
+    "Neil",
+    "Nicholas",
+    "Noah",
+    "Oliver",
+    "Oscar",
+    "Owen",
+    "Patrick",
+    "Paul",
+    "Peter",
+    "Philip",
+    "Phillip",
+    "Phillip",
+    "Ralph",
+    "Randy",
+    "Raymond",
+    "Reginald",
+    "Richard",
+    "Robert",
+    "Roger",
+    "Ronald",
+    "Roy",
+    "Russell",
+    "Ryan",
+    "Samuel",
+    "Sean",
+    "Sebastian",
+    "Seth",
+    "Shane",
+    "Shawn",
+    "Sidney",
+    "Simon",
+    "Stephen",
+    "Steven",
+    "Stewart",
+    "Terry",
+    "Theodore",
+    "Thomas",
+    "Timothy",
+    "Trevor",
+    "Victor",
+    "Vincent",
+    "Warren",
+    "Wayne",
+    "Wesley",
+    "William",
+    "Zachary",
+};
+
 enum class ENTITY_TYPE{
     UNKNOWN,
     ITEM,
@@ -279,7 +442,7 @@ const double RANK_Probabilities[] = {
 };
 
 const vector<const char*> RANK_Names[] = {
-    {"", "plain", "boring", "creped", "low-life"}, // NONE
+    {"dull", "plain", "boring", "creped", "low-life"}, // NONE
     {"supernatural", "other worldly", "mysterious", "magician"},    // SUPERNATURAL
     {"half blood", "creped", "disgusting", "waste", "trash"},    // HALF_BLOOD
     {"demigod", "half god", "half celestial", "half divine", "demon", "unholy", "creped"},  // DEMIGOD
@@ -470,51 +633,52 @@ const double ATTRIBUTE_Probabilities[] = {
 };
 
 const vector<const char*> ATTRIBUTE_Names[] = {
-    {"Str", "Strength"},
-    {"Dam", "Damage"},
-    {"HP", "Health"},
-    {"Spd", "Speed"},
-    {"Def", "Defense"},
-    {"Acc", "Accuracy"},
-    {"Eva", "Evasion"},
-    {"Crit", "Critical Chance"},
-    {"CritPwr", "Critical Power"},
-    {"Size", "Size Multiplier"},
+    {"Strength"},
+    {"Damage"},
+    {"Health"},
+    {"Speed"},
+    {"Defense"},
+    {"Accuracy"},
+    {"Evasion"},
+    {"Critical Chance"},
+    {"Critical Power"},
+    {"Size Multiplier"},
     // All resistances      
-    {"Heat", "Heat Resistance"},
-    {"Cold", "Cold Resistance"},
-    {"Elec", "Electricity Resistance"},
-    {"Pois", "Poison Resistance"},
-    {"Acid", "Acid Resistance"},
-    {"Rad", "Radiation Resistance"},
-    {"Psy", "Psychic Resistance"},
-    {"Sonic", "Sonic Resistance"},
-    {"Light", "Light Resistance"},
-    {"Dark", "Darkness Resistance"},
-    {"Magic", "Magic Resistance"},
-    {"Phys", "Physical Resistance"},
-    {"Ment", "Mental Resistance"},
-    {"Astral", "Astral Resistance"},
-    {"Dim", "Dimensional Resistance"},
-    {"Nuke", "Nuclear Resistance"},
-    {"Bio", "Biological Resistance"},
-    {"Nat", "Natural Resistance"},
-    {"Exp", "Explosive Resistance"},
+    {"Heat Resistance"},
+    {"Cold Resistance"},
+    {"Electricity Resistance"},
+    {"Poison Resistance"},
+    {"Acid Resistance"},
+    {"Radiation Resistance"},
+    {"Psychic Resistance"},
+    {"Sonic Resistance"},
+    {"Light Resistance"},
+    {"Darkness Resistance"},
+    {"Magic Resistance"},
+    {"Physical Resistance"},
+    {"Mental Resistance"},
+    {"Astral Resistance"},
+    {"Dimensional Resistance"},
+    {"Nuclear Resistance"},
+    {"Biological Resistance"},
+    {"Natural Resistance"},
+    {"Explosive Resistance"},
 
-    {"Int", "Intelligence"},
-    {"Wis", "Wisdom"},
-    {"Cha", "Charisma"},
-    {"Per", "Perception"},
-    {"Luck", "Luck"},
-    {"Will", "Willpower"},
-    {"Mem", "Memory"},
-    {"Crea", "Creativity"},
-    {"Emp", "Empathy"},
-    {"Log", "Logic"},
-    {"Rea", "Reasoning"},
-    {"Ins", "Insight"},
-    {"Awa", "Awareness"},
-    {"Ins", "Instinct"},
+    {"Intelligence"},
+    {"Wisdom"},
+    {"Charisma"},
+    {"Perception"},
+    {"Luck"},
+    {"Willpower"},
+    {"Memory"},
+    {"Creativity"},
+    {"Empathy"},
+    {"Logic"},
+    {"Reasoning"},
+    {"Insight"},
+    {"Awareness"},
+    {"Instinct"},
+    {"Luck"},
 
     {"", ""},
 };
@@ -531,6 +695,11 @@ public:
         else
             return 1.f;   // Passive.
     }
+
+    pair<ATTRIBUTE_TYPES, float> Get_Most_Aggressive();
+
+    ATTRIBUTE_TYPES Get_Most_Low();
+
 
     // Operator overloads
     float operator[](ATTRIBUTE_TYPES type){
@@ -603,44 +772,44 @@ public:
     // The power is them multiplied by the RANK factor.
     int Power = 1;
 
-    ATTRIBUTES Prefixes;
-    ATTRIBUTES Suffixes;
+    ATTRIBUTES Local;
+    ATTRIBUTES Global;
 
     STATS() = default;
 
     // Operator overloads
     STATS& operator=(const STATS& stats){
         Power = stats.Power;
-        Prefixes = stats.Prefixes;
-        Suffixes = stats.Suffixes;
+        Local = stats.Local;
+        Global = stats.Global;
         return *this;
     }
 
     STATS& operator+=(const STATS& stats){
         Power += stats.Power;
-        Prefixes += stats.Prefixes;
-        Suffixes += stats.Suffixes;
+        Local += stats.Local;
+        Global += stats.Global;
         return *this;
     }
 
     STATS& operator-=(const STATS& stats){
         Power -= stats.Power;
-        Prefixes -= stats.Prefixes;
-        Suffixes -= stats.Suffixes;
+        Local -= stats.Local;
+        Global -= stats.Global;
         return *this;
     }
 
     STATS& operator*=(const STATS& stats){
         Power *= stats.Power;
-        Prefixes *= stats.Prefixes;
-        Suffixes *= stats.Suffixes;
+        Local *= stats.Local;
+        Global *= stats.Global;
         return *this;
     }
 
     STATS& operator/=(const STATS& stats){
         Power /= stats.Power;
-        Prefixes /= stats.Prefixes;
-        Suffixes /= stats.Suffixes;
+        Local /= stats.Local;
+        Global /= stats.Global;
         return *this;
     }
 
@@ -964,18 +1133,8 @@ enum class SPECIES{
     TIME,           // 0.000001% to get
 
     // elemental categorized gods
-    FIRE,           // 0.00001% to get
-    ICE,            // 0.00001% to get
-    EARTH,          // 0.00001% to get
-    WATER,          // 0.00001% to get
-    AIR,            // 0.00001% to get
-    LIGHTNING,      // 0.00001% to get
-    WIND,           // 0.00001% to get
-    LIGHT,          // 0.00001% to get
-    DARKNESS,       // 0.00001% to get
     MAGIC,          // 0.00001% to get
     RADIATION,      // 0.00001% to get
-    ELECTRICITY,    // 0.00001% to get
     PLASMA,         // 0.00001% to get
     GRAVITY,        // 0.00001% to get
     MAGNETISM,      // 0.00001% to get
@@ -985,13 +1144,6 @@ enum class SPECIES{
     DARKMATTER,     // 0.00001% to get
     LIGHTENERGY,    // 0.00001% to get
     LIGHTMATTER,    // 0.00001% to get
-    HEAT,           // 0.00001% to get
-    COLD,           // 0.00001% to get
-    DARK,           // 0.00001% to get
-    LIGHT,          // 0.00001% to get
-    ELECTRICITY,    // 0.00001% to get
-    PLASMA,         // 0.00001% to get
-    GRAVITY,        // 0.00001% to get
 
     // H.P Lovefractian conspetualized horror types
     OLDONE,         // 0.000001% to get
@@ -1083,13 +1235,6 @@ const double SPECIES_Probabilities[] = {
     0.000001,  // DARKMATTER
     0.000001,  // LIGHTENERGY
     0.000001,  // LIGHTMATTER
-    0.000001,  // HEAT
-    0.000001,  // COLD
-    0.000001,  // DARK
-    0.000001,  // LIGHT
-    0.000001,  // ELECTRICITY
-    0.000001,  // PLASMA
-    0.000001,  // GRAVITY
     
     0.0000001,  // OLDONE
     0.0000001,  // FIRSTONE
@@ -1205,34 +1350,27 @@ const string SPECIES_Names[] = {
     "destiny",
     "time",
 
-    "fire",
-    "ice",
-    "earth",
-    "water",
-    "air",
-    "lightning",
-    "wind",
-    "light",
-    "darkness",
-    "magic",
-    "radiation",
-    "electricity",
-    "plasma",
-    "gravity",
-    "magnetism",
-    "matter",
-    "energy",
-    "darkenergy",
-    "darkmatter",
-    "lightenergy",
-    "lightmatter",
-    "heat",
-    "cold",
-    "dark",
-    "light",
-    "electricity",
-    "plasma",
-    "gravity",
+    "fire elemental",
+    "ice elemental",
+    "earth elemental",
+    "water elemental",
+    "air elemental",
+    "lightning elemental",
+    "wind elemental",
+    "light elemental",
+    "darkness elemental",
+    "magical mass",
+    "radiation mass",
+    "electricity elemental",
+    "plasma elemental",
+    "gravity elemental",
+    "magnetism elemental",
+    "matter elemental",
+    "energy elemental",
+    "darkenergy elemental",
+    "darkmatter elemental",
+    "lightenergy elemental",
+    "lightmatter elemental",
 
     "old one",
     "first one",
@@ -1248,6 +1386,7 @@ const string SPECIES_Names[] = {
     "the thing that will not be",
     "the thing that is",
     "the thing that was",
+    "the thing that is and is not",
 
     "domain holder",
 
@@ -1296,40 +1435,103 @@ const vector<string> Negatives = {
     "rotten",
 };
 
+enum class BODY_PART_TYPES{
+    UNKNOWN,
+    PAWS,
+    HANDS,
+    LEGS,
+    TAIL,
+    HEAD,
+    TORSO,
+    END
+};
+
+const double BODY_PART_Probabilities[] = {
+    0.0f,
+    0.2f,
+    0.2f,
+    0.2f,
+    0.2f,
+    0.01f,
+    0.02f,
+};
+
+class Body_Part{
+public:
+    BODY_PART_TYPES Type;
+
+    float Condition = 1.f;  // 0.f to 1.f
+    int Size = 1.f;         // 0.1f to x.f
+
+    vector<class Entity*> Equipped;
+
+    Body_Part() = default;
+};
+
+class Specie_Descriptor{
+public:
+    string Name = "";
+
+    SPECIES Specie;
+    RANK Rank;
+    
+    // Theses are pointer since when a limb is cut of it stays and someone other can pick it up.
+    vector<Body_Part*> Body_Parts; 
+
+    ATTRIBUTES Passive_Attributes;
+
+    Specie_Descriptor() = default;
+    Specie_Descriptor(Location position);
+};
+
+class Behaviour{
+public:
+
+    // This is an automated snap-shotting system which takes snapshots of the current entity stats, and the proceeding actions it took.
+
+};
+
+class String_Representation{
+public:
+    string ID = "";
+
+    vector<string> Prefixes;
+    vector<string> Suffixes;
+
+    string History = "";
+
+};
+
 class Entity{
 protected:
-    string Name;
-    string Description;
+    String_Representation Info;
 
     Location Position;
     ENTITY_TYPE Type;
-    RANK Rank;
     CLASS Class;
     STATS Base_Stats;
     vector<ROLE> Roles;
-    SPECIES Specie;
+    Specie_Descriptor Specie;
+
+    ATTRIBUTES Current_State;
 
     // For AST
     Entity* Holder = nullptr;
-    vector<Entity*> Holding;
+    vector<Entity*> Inventory;
 public:
     Entity(Location position, ENTITY_TYPE type);
 
-    void Update_Stats();
+    void Tick();
 
-    inline RANK Get_Rank(){ return Rank; }
+    inline RANK Get_Rank(){ return Specie.Rank; }
     inline CLASS Get_Class(){ return Class; }
     inline Location Get_Position() { return Position; }
-    inline float Get_Attribute(ATTRIBUTE_TYPES type);
+    inline float Get_Attribute(ATTRIBUTE_TYPES type, bool Local = false);
+    inline string Get_Name() { return Info.ID; }
 
-    inline vector<ATTRIBUTE_TYPES> Get_Prefixes();
     inline string Construct_Name();
     inline string Construct_Description();
 };
-
-string To_String(Entity* e){
-    
-}
 
 
 #endif

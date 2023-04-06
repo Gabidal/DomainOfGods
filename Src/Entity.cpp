@@ -1,15 +1,25 @@
 #include "Entity.h"
 #include "Globals.h"
-#include "../Depedencies/TerGen.h"
+#include "../Dependencies/TerGen.h"
 
 
 template<typename T>
 T Get_Rarity(Location location, const double Probability_Table[]){
     // Get the total probability by summing all the individual probabilities
-    const double totalProbability = 1.0 - (0.99 * 0.0000000000000001);
+    double totalProbability = 0;
+
+    // sum all the probability table content
+    for (int i = 0; i < (int)T::END; i++){
+        totalProbability += Probability_Table[i];
+    }
 
     // Generate a random number between 0 and 1
-    double random = TerGen::Noise(location.LOW, GLOBALS::Value_Noise); //(double)rand() / RAND_MAX;
+    // Altough TerGen returns -1 to 1 we need to normalize it to 0 to 1
+    double Ceiling = 1;
+    double Floor = -1;
+
+    double random = TerGen::Noise(TerGen::Vector3(location.LOW.X, location.LOW.Y, location.LOW.Z), GLOBALS::Value_Noise); //(double)rand() / RAND_MAX;
+    random = (random - Floor) / (abs(Floor) + Ceiling);
 
     // Multiply the random number by the total probability to scale it to the correct range
     random *= totalProbability;
@@ -41,7 +51,7 @@ ROLE Lot_Role(Location location){
     return Get_Rarity<ROLE>(location, ROLE_Probabilities);
 }
 
-SPECIES Lot_Species(Location location){
+SPECIES Lot_Specie_Type(Location location){
     return Get_Rarity<SPECIES>(location, SPECIES_Probabilities);
 }
 
@@ -57,11 +67,6 @@ template<typename T>
 string Get_Name_From_Table(T enum_type, const vector<const char*> name_table[]){
     int Random_Index = Int_Range(0, name_table[(int)enum_type].size() - 1);
     return name_table[(int)enum_type][Random_Index];
-}
-
-template<typename T>
-string Get_Name(T enum_type, const string names[]){
-    return names[(int)enum_type];
 }
 
 ATTRIBUTES Lot_Attributes(Entity* e){
@@ -87,80 +92,103 @@ STATS Lot_Stats(Entity* e){
     STATS Result;
     
     Result.Power = Int_Range(GLOBALS::MIN_POWER, GLOBALS::MAX_POWER) * (int)e->Get_Rank();
-    Result.Prefixes = Lot_Attributes(e);
-    Result.Suffixes = Lot_Attributes(e);
 
     return Result;
 }
 
-vector<Entity*> Lot_Items(Entity* e){
+vector<Entity*> Lot_Items(Body_Part* limb, Location position){
     vector<Entity*> Result;
 
-    int Tmp_Size = e->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER);
+    // these items will not be equipped asap, but the limb is presented here so that we generate only usable loot.
+    // The  Int_Range(false, true) is because we dont want to fully equip all the area.
+    for (int Current_Size = limb->Size; Current_Size > 0 && Int_Range(0, 2) > 0;){
 
-    Entity* Current = new Entity(e->Get_Position(), ENTITY_TYPE::ITEM);
+        Entity* item = new Entity(position, ENTITY_TYPE::ITEM);
 
-    for (;Current->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER) < Tmp_Size; Tmp_Size -= Current->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER)){
-        Result.push_back(Current);
-        Current = new Entity(e->Get_Position(), ENTITY_TYPE::ITEM);
+
+
     }
 
     return Result;
 }
 
-float Entity::Get_Attribute(ATTRIBUTE_TYPES type){
-    float Result = 1.f;
+Body_Part Lot_Body_Part(RANK r){
+    Body_Part Result;
 
-    Result *= Base_Stats.Prefixes.Get(type) * Base_Stats.Suffixes.Get(type) * Base_Stats.Power;
+    Result.Condition = Float_Range(0.1f, 1.f);
+    Result.Size = Int_Range((int)r / 2, (int)r);
+    Result.Type = (BODY_PART_TYPES)Int_Range((int)BODY_PART_TYPES::UNKNOWN, (int)BODY_PART_TYPES::END);
 
     return Result;
+}
+
+float Entity::Get_Attribute(ATTRIBUTE_TYPES type, bool Local){
+    float Result = 1.f;
+
+    if (Local)
+        Result *= Base_Stats.Local.Get(type);
+
+    Result *= Base_Stats.Global.Get(type) * Base_Stats.Power;
+
+    return Result;
+}
+
+Specie_Descriptor::Specie_Descriptor(Location position){
+    Specie = Lot_Specie_Type(position);
+    Name = SPECIES_Names[(int)Specie];
+    Rank = Lot_Rank(position);
+
+    int Body_Part_Count = Int_Range((int)Rank / 2, (int)Rank);
+
+    for (int i = 0; i < Body_Part_Count; i++){
+        Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank)));
+    }
 }
 
 Entity::Entity(Location location, ENTITY_TYPE type){
     Position = location;
     Type = type;
-    Rank = Lot_Rank(location);
     Class = Lot_Class(location);
 
-    Base_Stats = Lot_Stats(this);
-
-    // lot the roles
-    for (int i = 0; i < Int_Range(0, Base_Stats.Power); i++){
-        Roles.push_back(
-            Lot_Role(location)
-        );
-    }
-
-    // lot the species
-    Specie = Lot_Species(location);
-
-    // Lot random items for the entity
     if (Type != ENTITY_TYPE::ITEM){
+        Specie = Specie_Descriptor(location);
+        Base_Stats = Lot_Stats(this);
 
-        Holding = Lot_Items(this);
+        // lot the roles
+        for (int i = 0; i < Int_Range(0, Base_Stats.Power); i++){
+            Roles.push_back(
+                Lot_Role(location)
+            );
+        }
 
-    }
+        // Lot random items for the entity
+        for (auto* limb : Specie.Body_Parts){
+            vector<Entity*> tmp = Lot_Items(limb, Position);
 
-    Update_Stats();
-
-    Name = Construct_Name();
-    Description = Construct_Description();
-}
-
-void Entity::Update_Stats(){
-    // We will decrement the Tmp_Size until the next item wont "fit"
-    int Tmp_Size = Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER);
-
-    STATS New_Stats = Base_Stats;    
-
-    for (Entity* item : Holding){
-        if (item->Type == ENTITY_TYPE::ITEM){
-            if (Tmp_Size - item->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER) >= 0){
-                Tmp_Size -= item->Get_Attribute(ATTRIBUTE_TYPES::SIZE_MULTIPLIER);
-                New_Stats += item->Base_Stats;
-            }
+            // We put em here instead of the limb equip, because we want the entity to choose the right equipment based on the environment.
+            this->Inventory.insert(this->Inventory.end(), tmp.begin(), tmp.end());
         }
     }
+    else{
+        // Entities dont need this, this is mainly for items.
+        Base_Stats.Global = Lot_Attributes(this);
+        Base_Stats.Local = Lot_Attributes(this);
+
+    }
+
+    // Run the tick for once to make sure everything is up to date.
+    Tick();
+
+    Info.ID = Construct_Name();
+    Info.History = Construct_Description();
+}
+
+void Entity::Tick(){
+    ATTRIBUTES New_Stats = Current_State;    
+
+    // TODO:
+    // We can use the Current state and the all the passives + local + globals to make an vector which tells us the speed of some attributes going down or up.
+    // This can be used as the "severity" scale factor
 }
 
 string Describe_Attribute_As_Adjective(bool is_positive){
@@ -175,20 +203,14 @@ string Describe_Attribute_As_Adjective(bool is_positive){
     return Result;
 }
 
-string Entity::Construct_Name(){
-    string Result = "";
-    // don't need to update the stats, since the updating works the same way as GGUI updates work.
-    string Prefixes = "";
-    string Suffixes = "";
-    string Rank_Name = Get_Name_From_Table(this->Rank, RANK_Names);
-    string Class_Name = Get_Name_From_Table(this->Class, CLASS_Names);
 
+pair<ATTRIBUTE_TYPES, float> ATTRIBUTES::Get_Most_Aggressive(){
     float Most_Aggressive_Attribute_Value = 1.f;
     ATTRIBUTE_TYPES Most_Aggressive_Attribute = (ATTRIBUTE_TYPES)0;
 
     // Calculate the prefixes
     for (ATTRIBUTE_TYPES Current_Attribute = (ATTRIBUTE_TYPES)0; (int)Current_Attribute < (int)ATTRIBUTE_TYPES::END; Current_Attribute = (ATTRIBUTE_TYPES)((int)Current_Attribute + 1)){
-        float Current_Value = Base_Stats.Prefixes.Get(Current_Attribute);
+        float Current_Value = Get(Current_Attribute);
 
         if (abs(Current_Value - 1.f) > abs(Most_Aggressive_Attribute_Value - 1.f)){
             Most_Aggressive_Attribute_Value = Current_Value;
@@ -196,30 +218,25 @@ string Entity::Construct_Name(){
         }
     }
 
-    if ((int)Most_Aggressive_Attribute != 0)
-        Prefixes += Describe_Attribute_As_Adjective(Most_Aggressive_Attribute_Value > 1.f) + " " + Get_Name_From_Table(Most_Aggressive_Attribute, ATTRIBUTE_Names) + " ";
+    return make_pair(Most_Aggressive_Attribute, Most_Aggressive_Attribute_Value);
+}
 
-    // Clean the values
-    Most_Aggressive_Attribute_Value = 1.f;
-    Most_Aggressive_Attribute = (ATTRIBUTE_TYPES)0;
+ATTRIBUTE_TYPES ATTRIBUTES::Get_Most_Low(){
+    float Most_Low_Attribute_Value = 1.f;
+    ATTRIBUTE_TYPES Most_Low_Attribute = (ATTRIBUTE_TYPES)0;
 
-    // Calculate the suffixes
-    for (ATTRIBUTE_TYPES Current_Attribute = (ATTRIBUTE_TYPES)0; (int)Current_Attribute < (int)ATTRIBUTE_TYPES::END; Current_Attribute = (ATTRIBUTE_TYPES)((int)Current_Attribute + 1)){
-        float Current_Value = Base_Stats.Suffixes.Get(Current_Attribute);
-
-        if (abs(Current_Value - 1.f) > abs(Most_Aggressive_Attribute_Value - 1.f)){
-            Most_Aggressive_Attribute_Value = Current_Value;
-            Most_Aggressive_Attribute = Current_Attribute;
+    for (auto i : Attributes){
+        if (i.second < Most_Low_Attribute_Value){
+            Most_Low_Attribute_Value = i.second;
+            Most_Low_Attribute = i.first;
         }
     }
 
-    if ((int)Most_Aggressive_Attribute != 0)
-        Suffixes += Describe_Attribute_As_Adjective(Most_Aggressive_Attribute_Value > 1.f) + " " + Get_Name_From_Table(Most_Aggressive_Attribute, ATTRIBUTE_Names) + " ";
+    return Most_Low_Attribute;
+}
 
-    
-    Result = Prefixes + Rank_Name + Class_Name + Get_Name(Specie, SPECIES_Names) + " " + Suffixes;
-
-    return Result;
+string Entity::Construct_Name(){
+    return Name_Table[Int_Range(0, Name_Table.size() - 1)];
 }
 
 string Entity::Construct_Description(){

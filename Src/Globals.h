@@ -1,7 +1,7 @@
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
 
-#include "../Depedencies/TerGen.h"
+#include "../Dependencies/TerGen.h"
 
 namespace GLOBALS{
 
@@ -9,10 +9,10 @@ namespace GLOBALS{
 
     extern void Init_Globals();
 
-    
     extern int MIN_POWER;
     extern int MAX_POWER;
 
+    extern bool DEBUG;
 }
 
 #endif
