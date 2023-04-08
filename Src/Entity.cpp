@@ -112,12 +112,16 @@ vector<Entity*> Lot_Items(Body_Part* limb, Location position){
     return Result;
 }
 
-Body_Part Lot_Body_Part(RANK r){
+Body_Part Lot_Body_Part(RANK r, BODY_PART_TYPES type = BODY_PART_TYPES::UNKNOWN){
     Body_Part Result;
 
     Result.Condition = Float_Range(0.1f, 1.f);
     Result.Size = Int_Range((int)r / 2, (int)r);
-    Result.Type = (BODY_PART_TYPES)Int_Range((int)BODY_PART_TYPES::UNKNOWN, (int)BODY_PART_TYPES::END);
+
+    if (type == BODY_PART_TYPES::UNKNOWN)
+        Result.Type = (BODY_PART_TYPES)Int_Range((int)BODY_PART_TYPES::UNKNOWN, (int)BODY_PART_TYPES::END);
+    else
+        Result.Type = type;
 
     return Result;
 }
@@ -138,11 +142,20 @@ Specie_Descriptor::Specie_Descriptor(Location position){
     Name = SPECIES_Names[(int)Specie];
     Rank = Lot_Rank(position);
 
-    int Body_Part_Count = Int_Range((int)Rank / 2, (int)Rank);
+    // These are the quarantined chances of some limbs:
+    // Head: 100%
+    // Torso: 100%
+    // 2x HANDS: 100%
+    // 2x LEGS: 100%
 
-    for (int i = 0; i < Body_Part_Count; i++){
-        Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank)));
-    }
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::HEAD)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::TORSO)));
+
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::HAND)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::HAND)));
+
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::LEG)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::LEG)));
 }
 
 Entity::Entity(Location location, ENTITY_TYPE type){
@@ -183,12 +196,52 @@ Entity::Entity(Location location, ENTITY_TYPE type){
     Info.History = Construct_Description();
 }
 
+void Entity::AI(Body_Part* brain){
+
+    // TODO: make all the UI for action making.
+
+}
+
+void Entity::Calculate_Passives(){
+    for (auto* limb : Specie.Body_Parts){
+
+        for (auto* equipped : limb->Equipped){
+
+            for (auto& Attribute : Current_Effects.Attributes){
+                if (Attribute.second < 1.f)
+                    Attribute.second = max(equipped->Get_Attribute(Attribute.first, false) + Attribute.second, 2.f);
+
+
+            }
+        }
+    }
+}
+
+
+void Entity::Calculate_Effects(){
+    for (auto& Effect : Current_Effects.Attributes){
+        // Multiplies with the direction vector.
+        Stats.Attributes[Effect.first] *= Effect.second;
+    }
+}
+
 void Entity::Tick(){
-    ATTRIBUTES New_Stats = Current_State;    
+    ATTRIBUTES New_Stats = Current_Effects;    
 
     // TODO:
     // We can use the Current state and the all the passives + local + globals to make an vector which tells us the speed of some attributes going down or up.
     // This can be used as the "severity" scale factor
+
+    // For each head the entity can make an decision per tick.
+    for (auto* limb : Specie.Body_Parts)
+        if (limb->Type == BODY_PART_TYPES::HEAD)
+            AI(limb);
+
+    // Addon to head decisions, the passives also must be calculated.
+    Calculate_Passives();
+
+    // Now calculate how the curses and negative/positive effects affect the main stats
+    Calculate_Effects();
 }
 
 string Describe_Attribute_As_Adjective(bool is_positive){

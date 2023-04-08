@@ -1437,9 +1437,8 @@ const vector<string> Negatives = {
 
 enum class BODY_PART_TYPES{
     UNKNOWN,
-    PAWS,
-    HANDS,
-    LEGS,
+    HAND,
+    LEG,
     TAIL,
     HEAD,
     TORSO,
@@ -1448,7 +1447,6 @@ enum class BODY_PART_TYPES{
 
 const double BODY_PART_Probabilities[] = {
     0.0f,
-    0.2f,
     0.2f,
     0.2f,
     0.2f,
@@ -1513,7 +1511,21 @@ protected:
     vector<ROLE> Roles;
     Specie_Descriptor Specie;
 
-    ATTRIBUTES Current_State;
+    // The current state vectors, this includes:
+    // - Bleed
+    // - Poison
+    // - Sleep
+    // - Stun
+    // - Confusion
+    // - Paralysis
+    // - Blindness
+    // - Deafness
+    // - Fear
+    // - Rage
+    ATTRIBUTES Current_Effects;
+
+    // This moves in the 0.f - 100.f or x.f
+    ATTRIBUTES Stats;
 
     // For AST
     Entity* Holder = nullptr;
@@ -1522,6 +1534,10 @@ public:
     Entity(Location position, ENTITY_TYPE type);
 
     void Tick();
+    void AI(Body_Part* brain);
+    void Calculate_Passives();
+    void Calculate_Effects();
+    
 
     inline RANK Get_Rank(){ return Specie.Rank; }
     inline CLASS Get_Class(){ return Class; }
