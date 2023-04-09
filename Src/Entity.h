@@ -349,12 +349,7 @@ const vector<string> Name_Table = {
 enum class ENTITY_TYPE{
     UNKNOWN,
     ITEM,
-    FLOOR,
-    WALL,
-    DOOR,
-    CHEST,
-    LIVING,
-    TRAP,
+    ENTITY,
 
     END
 };
@@ -533,152 +528,80 @@ public:
 };
 
 enum class ATTRIBUTE_TYPES{
-    STRENGTH,               // 10% to get
-    DAMAGE,                 // 10% to get
-    HEALTH,                 // 10% to get
-    SPEED,                  // 10% to get
-    DEFENSE,                // 10% to get
-    ACCURACY,               // 10% to get
-    EVASION,                // 10% to get
-    CRIT_CHANCE,            // 5% to get
-    CRIT_POWER,             // 5% to get
-    SIZE_MULTIPLIER,        // 0.001% to get
-    // All resistances      
-    HEAT_RESISTANCE,        // 5% to get
-    COLD_RESISTANCE,        // 5% to get
-    ELECTRICITY_RESISTANCE, // 5% to get
-    POISON_RESISTANCE,      // 2.5% to get
-    ACID_RESISTANCE,        // 2.5% to get
-    RADIATION_RESISTANCE,   // 0.001% to get
-    PSYCHIC_RESISTANCE,     // 1% to get
-    SONIC_RESISTANCE,       // 2% to get
-    LIGHT_RESISTANCE,       // 3.5% to get
-    DARKNESS_RESISTANCE,    // 3% to get
-    MAGIC_RESISTANCE,       // 5% to get
-    PHYSICAL_RESISTANCE,    // 5% to get
-    MENTAl_RESISTANCE,      // 1% to get
-    ASTRAL_RESISTANCE,      // 0.1% to get
-    DIMENSIONAL_RESISTANCE, // 0.01% to get
-    NUCLEAR_RESISTANCE,     // 0.001% to get
-    BIOLOGICAL_RESISTANCE,  // 0.001% to get
-    NATURAL_RESISTANCE,     // 0.001% to get
-    EXPLOSIVE_RESISTANCE,   // 0.1% to get
+    // Physicals
+    HEALTH,               // 10% to get
+    HUNGER,               // 10% to get
+    THIRST,               // 10% to get
+    STRENGTH,             // 10% to get
+    DEXTERITY,            // 10% to get
+    AGILITY,              // 10% to get
+    SIZE,                 // 10% to get
 
-    INTELLIGENCE,           // 5% to get
-    WISDOM,                 // 5% to get
-    CHARISMA,               // 5% to get
-    PERCEPTION,             // 5% to get
-    LUCK,                   // 5% to get
-    WILLPOWER,              // 5% to get
-    MEMORY,                 // 5% to get
-    CREATIVITY,             // 5% to get
-    EMPATHY,                // 5% to get
-    LOGIC,                  // 5% to get
-    REASONING,              // 5% to get
-    INSIGHT,                // 5% to get
-    AWARENESS,              // 5% to get
-    INSTINCT,               // 5% to get  
+    // Mentals
+    INTELLIGENCE,         // 10% to get
+    MANA,                 // 10% to get
+    SANITY,               // 10% to get
+
+    // MISC
+    LUCK,                 // 10% to get
+    RADIOACTIVITY,       // 10% to get
+
+    // Resistances
+    HEAT_RESISTANCE,      // 10% to get
+    COLD_RESISTANCE,      // 10% to get
+    ELECTRICITY_RESISTANCE, // 10% to get
+    POISON_RESISTANCE,    // 10% to get
+    ACID_RESISTANCE,      // 10% to get
 
     END
 };
 
 const double ATTRIBUTE_Probabilities[] = {
-    0.1,    // STRENGTH
-    0.1,    // DAMAGE
     0.1,    // HEALTH
-    0.1,    // SPEED
-    0.1,    // DEFENSE
-    0.1,    // ACCURACY
-    0.1,    // EVASION
-    0.05,   // CRIT_CHANCE
-    0.05,   // CRIT_POWER
-    0.00001,    // SIZE_MULTIPLIER
-    // All resistances      
-    0.05,   // HEAT_RESISTANCE
-    0.05,   // COLD_RESISTANCE
-    0.05,   // ELECTRICITY_RESISTANCE
-    0.025,  // POISON_RESISTANCE
-    0.025,  // ACID_RESISTANCE
-    0.0001, // RADIATION_RESISTANCE
-    0.01,   // PSYCHIC_RESISTANCE
-    0.02,   // SONIC_RESISTANCE
-    0.035,  // LIGHT_RESISTANCE
-    0.03,   // DARKNESS_RESISTANCE
-    0.05,   // MAGIC_RESISTANCE
-    0.05,   // PHYSICAL_RESISTANCE
-    0.01,   // MENTAl_RESISTANCE
-    0.001,  // ASTRAL_RESISTANCE
-    0.0001, // DIMENSIONAL_RESISTANCE
-    0.00001,    // NUCLEAR_RESISTANCE
-    0.00001,    // BIOLOGICAL_RESISTANCE
-    0.00001,    // NATURAL_RESISTANCE
-    0.0001, // EXPLOSIVE_RESISTANCE
+    0.1,    // HUNGER
+    0.1,    // THIRST
+    0.1,    // STRENGTH
+    0.1,    // DEXTERITY
+    0.1,    // AGILITY
+    0.1,    // SIZE
 
-    0.05,   // INTELLIGENCE
-    0.05,   // WISDOM
-    0.05,   // CHARISMA
-    0.05,   // PERCEPTION
-    0.05,   // LUCK
-    0.05,   // WILLPOWER
-    0.05,   // MEMORY
-    0.05,   // CREATIVITY
-    0.05,   // EMPATHY
-    0.05,   // LOGIC
-    0.05,   // REASONING
-    0.05,   // INSIGHT
-    0.05,   // AWARENESS
-    0.05,   // INSTINCT
+    0.1,    // INTELLIGENCE
+    0.1,    // MANA
+    0.1,    // SANITY
+
+    0.1,    // LUCK
+    0.1,    // RADIOACTIVITY
+
+    0.1,    // HEAT_RESISTANCE
+    0.1,    // COLD_RESISTANCE
+    0.1,    // ELECTRICITY_RESISTANCE
+    0.1,    // POISON_RESISTANCE
+    0.1,    // ACID_RESISTANCE
 
     1.0,    // END
 };
 
 const vector<const char*> ATTRIBUTE_Names[] = {
-    {"Strength"},
-    {"Damage"},
-    {"Health"},
-    {"Speed"},
-    {"Defense"},
-    {"Accuracy"},
-    {"Evasion"},
-    {"Critical Chance"},
-    {"Critical Power"},
-    {"Size Multiplier"},
-    // All resistances      
-    {"Heat Resistance"},
-    {"Cold Resistance"},
-    {"Electricity Resistance"},
-    {"Poison Resistance"},
-    {"Acid Resistance"},
-    {"Radiation Resistance"},
-    {"Psychic Resistance"},
-    {"Sonic Resistance"},
-    {"Light Resistance"},
-    {"Darkness Resistance"},
-    {"Magic Resistance"},
-    {"Physical Resistance"},
-    {"Mental Resistance"},
-    {"Astral Resistance"},
-    {"Dimensional Resistance"},
-    {"Nuclear Resistance"},
-    {"Biological Resistance"},
-    {"Natural Resistance"},
-    {"Explosive Resistance"},
+    {"health", "life"}, // HEALTH
+    {"hunger", "food"}, // HUNGER
+    {"thirst", "water"}, // THIRST
+    {"strength", "force"}, // STRENGTH
+    {"dexterity", "agility"}, // DEXTERITY
+    {"agility", "dexterity"}, // AGILITY
+    {"size", "mass"}, // SIZE
 
-    {"Intelligence"},
-    {"Wisdom"},
-    {"Charisma"},
-    {"Perception"},
-    {"Luck"},
-    {"Willpower"},
-    {"Memory"},
-    {"Creativity"},
-    {"Empathy"},
-    {"Logic"},
-    {"Reasoning"},
-    {"Insight"},
-    {"Awareness"},
-    {"Instinct"},
-    {"Luck"},
+    {"intelligence", "brain"}, // INTELLIGENCE
+    {"mana", "magic"}, // MANA
+    {"sanity", "mind"}, // SANITY
+
+    {"luck", "fortune"}, // LUCK
+    {"radioactivity", "radioactive"}, // RADIOACTIVITY
+
+    {"heat resistance", "heat"}, // HEAT_RESISTANCE
+    {"cold resistance", "cold"}, // COLD_RESISTANCE
+    {"electricity resistance", "electricity"}, // ELECTRICITY_RESISTANCE
+    {"poison resistance", "poison"}, // POISON_RESISTANCE
+    {"acid resistance", "acid"}, // ACID_RESISTANCE
 
     {"", ""},
 };
@@ -699,7 +622,6 @@ public:
     pair<ATTRIBUTE_TYPES, float> Get_Most_Aggressive();
 
     ATTRIBUTE_TYPES Get_Most_Low();
-
 
     // Operator overloads
     float operator[](ATTRIBUTE_TYPES type){
@@ -1458,10 +1380,10 @@ class Body_Part{
 public:
     BODY_PART_TYPES Type;
 
-    float Condition = 1.f;  // 0.f to 1.f
-    int Size = 1.f;         // 0.1f to x.f
+    ATTRIBUTES Flat_Stats;
 
     vector<class Entity*> Equipped;
+    vector<ATTRIBUTE_TYPES> Priorities;
 
     Body_Part() = default;
 };
@@ -1531,12 +1453,14 @@ protected:
     Entity* Holder = nullptr;
     vector<Entity*> Inventory;
 public:
+    Entity(Location position);
     Entity(Location position, ENTITY_TYPE type);
 
     void Tick();
     void AI(Body_Part* brain);
     void Calculate_Passives();
     void Calculate_Effects();
+    void Calculate_Locals();
     
 
     inline RANK Get_Rank(){ return Specie.Rank; }
@@ -1544,6 +1468,7 @@ public:
     inline Location Get_Position() { return Position; }
     inline float Get_Attribute(ATTRIBUTE_TYPES type, bool Local = false);
     inline string Get_Name() { return Info.ID; }
+    inline ENTITY_TYPE Get_Type() { return Type; }
 
     inline string Construct_Name();
     inline string Construct_Description();

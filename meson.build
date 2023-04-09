@@ -17,6 +17,8 @@ src = files(
   'Src/Globals.cpp',
   'Src/Map.cpp',
 
+  'UI/Render.cpp',
+
   'main.cpp'
 )
 

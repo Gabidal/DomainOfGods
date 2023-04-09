@@ -18,7 +18,13 @@ T Get_Rarity(Location location, const double Probability_Table[]){
     double Ceiling = 1;
     double Floor = -1;
 
-    double random = TerGen::Noise(TerGen::Vector3(location.LOW.X, location.LOW.Y, location.LOW.Z), GLOBALS::Value_Noise); //(double)rand() / RAND_MAX;
+    TerGen::Vector3 World_Position = {
+        location.HIGH.X + location.LOW.X * GLOBALS::CHUNK_WIDTH,
+        location.HIGH.Y + location.LOW.Y * GLOBALS::CHUNK_HEIGHT,
+        location.HIGH.Z + location.LOW.Z * GLOBALS::CHUNK_DEPTH
+    };
+
+    double random = TerGen::Noise(World_Position, GLOBALS::Value_Noise); //(double)rand() / RAND_MAX;
     random = (random - Floor) / (abs(Floor) + Ceiling);
 
     // Multiply the random number by the total probability to scale it to the correct range
@@ -87,6 +93,24 @@ ATTRIBUTES Lot_Attributes(Entity* e){
     return Result;
 }
 
+ATTRIBUTES Lot_Flat_Attributes(int Scaler){
+    ATTRIBUTES Result;
+
+    for (ATTRIBUTE_TYPES Current_Attribute = (ATTRIBUTE_TYPES)0; (int)Current_Attribute < (int)ATTRIBUTE_TYPES::END; Current_Attribute = (ATTRIBUTE_TYPES)((int)Current_Attribute + 1)){
+        
+        // Lot if the current attribute is even given to the result.
+        if (Float_Range(0.0f, 1.0f) < ATTRIBUTE_Probabilities[(int)Current_Attribute]){
+
+            float Min = 1.f + (float)Scaler / 2.f;
+            float Max = 1.f + (float)Scaler * 2.f;
+
+            Result.Attributes[Current_Attribute] = Float_Range(Min, Max);
+        }
+    }
+
+    return Result;
+}
+
 // The rank and the location of the entity affects the Stats.
 STATS Lot_Stats(Entity* e){
     STATS Result;
@@ -96,17 +120,42 @@ STATS Lot_Stats(Entity* e){
     return Result;
 }
 
+constexpr float Get_Cap_Value(float cap_as_percentage){
+    // Solve:
+    // ((x - 0.5) / x) - cap
+    // (x / x) - (0.5 / x) = cap
+    // 1 - (0.5 / x) = cap
+    // - (0.5 / x) = cap -1
+    // 0.5 / x = -cap + 1
+    // 0.5 = (-cap + 1) * x
+    // 0.5/(-cap + 1) = ((-cap + 1) / (-cap + 1)) * x
+    // 0.5/(1 - cap) = x
+    return (0.5f / (1.f - cap_as_percentage));
+}
+
+bool Lot_Luck(ATTRIBUTES attr){
+    constexpr float MAX_LUCK_CAP = Get_Cap_Value(0.75f);
+
+    float AGGRESSIVENESS = 0.2f;
+
+    // a - e^(-bx) * a
+    float Max_Range = MAX_LUCK_CAP - (exp(-AGGRESSIVENESS * attr.Get(ATTRIBUTE_TYPES::LUCK))) * MAX_LUCK_CAP;
+
+    return Float_Range(0.f, max(Max_Range, 0.001f)) > 0.5f;
+}
+
 vector<Entity*> Lot_Items(Body_Part* limb, Location position){
     vector<Entity*> Result;
 
     // these items will not be equipped asap, but the limb is presented here so that we generate only usable loot.
     // The  Int_Range(false, true) is because we dont want to fully equip all the area.
-    for (int Current_Size = limb->Size; Current_Size > 0 && Int_Range(0, 2) > 0;){
+    for (int Current_Size = limb->Flat_Stats.Get(ATTRIBUTE_TYPES::SIZE); Current_Size > 0 && Lot_Luck(limb->Flat_Stats);){
 
         Entity* item = new Entity(position, ENTITY_TYPE::ITEM);
 
+        Result.push_back(item);
 
-
+        Current_Size -= item->Get_Attribute(ATTRIBUTE_TYPES::SIZE);
     }
 
     return Result;
@@ -115,15 +164,25 @@ vector<Entity*> Lot_Items(Body_Part* limb, Location position){
 Body_Part Lot_Body_Part(RANK r, BODY_PART_TYPES type = BODY_PART_TYPES::UNKNOWN){
     Body_Part Result;
 
-    Result.Condition = Float_Range(0.1f, 1.f);
-    Result.Size = Int_Range((int)r / 2, (int)r);
+    Result.Flat_Stats = Lot_Flat_Attributes((int)r);
 
     if (type == BODY_PART_TYPES::UNKNOWN)
         Result.Type = (BODY_PART_TYPES)Int_Range((int)BODY_PART_TYPES::UNKNOWN, (int)BODY_PART_TYPES::END);
     else
         Result.Type = type;
 
+    Result.Priorities = {
+        ATTRIBUTE_TYPES::HEALTH,
+        ATTRIBUTE_TYPES::MANA,
+        ATTRIBUTE_TYPES::HUNGER,
+        ATTRIBUTE_TYPES::THIRST
+    };
+
     return Result;
+}
+
+ENTITY_TYPE Lot_Entity_Type(){
+    return (ENTITY_TYPE)Int_Range((int)ENTITY_TYPE::UNKNOWN, (int)ENTITY_TYPE::END);
 }
 
 float Entity::Get_Attribute(ATTRIBUTE_TYPES type, bool Local){
@@ -158,12 +217,14 @@ Specie_Descriptor::Specie_Descriptor(Location position){
     Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::LEG)));
 }
 
+Entity::Entity(Location position) : Entity(position, Lot_Entity_Type()){}
+
 Entity::Entity(Location location, ENTITY_TYPE type){
     Position = location;
     Type = type;
     Class = Lot_Class(location);
 
-    if (Type != ENTITY_TYPE::ITEM){
+    if (Type == ENTITY_TYPE::ENTITY){
         Specie = Specie_Descriptor(location);
         Base_Stats = Lot_Stats(this);
 
@@ -200,24 +261,23 @@ void Entity::AI(Body_Part* brain){
 
     // TODO: make all the UI for action making.
 
+
 }
 
 void Entity::Calculate_Passives(){
     for (auto* limb : Specie.Body_Parts){
-
         for (auto* equipped : limb->Equipped){
 
+            // This is to calculate all the passives vector effects.
             for (auto& Attribute : Current_Effects.Attributes){
                 if (Attribute.second < 1.f)
                     Attribute.second = max(equipped->Get_Attribute(Attribute.first, false) + Attribute.second, 2.f);
-
-
             }
         }
     }
 }
 
-
+// After all the passives have been accounted for we are going to apply them to the main flat stats.
 void Entity::Calculate_Effects(){
     for (auto& Effect : Current_Effects.Attributes){
         // Multiplies with the direction vector.
@@ -227,10 +287,6 @@ void Entity::Calculate_Effects(){
 
 void Entity::Tick(){
     ATTRIBUTES New_Stats = Current_Effects;    
-
-    // TODO:
-    // We can use the Current state and the all the passives + local + globals to make an vector which tells us the speed of some attributes going down or up.
-    // This can be used as the "severity" scale factor
 
     // For each head the entity can make an decision per tick.
     for (auto* limb : Specie.Body_Parts)
@@ -242,6 +298,26 @@ void Entity::Tick(){
 
     // Now calculate how the curses and negative/positive effects affect the main stats
     Calculate_Effects();
+
+    Calculate_Locals();
+}
+
+void Entity::Calculate_Locals(){
+    for (auto* limb : Specie.Body_Parts){
+        if (limb->Flat_Stats.Get(ATTRIBUTE_TYPES::HEALTH) <= 0)
+            continue;
+
+        // now go through the limb equipped
+        for (auto* equipped : limb->Equipped){
+
+            // now go through the equipped items attributes
+            for (auto& Attribute : equipped->Current_Effects.Attributes){
+
+                // now we add the attribute to the local attribute list.
+                limb->Flat_Stats.Attributes[Attribute.first] *= Attribute.second;
+            }
+        }
+    }
 }
 
 string Describe_Attribute_As_Adjective(bool is_positive){
@@ -255,7 +331,6 @@ string Describe_Attribute_As_Adjective(bool is_positive){
 
     return Result;
 }
-
 
 pair<ATTRIBUTE_TYPES, float> ATTRIBUTES::Get_Most_Aggressive(){
     float Most_Aggressive_Attribute_Value = 1.f;

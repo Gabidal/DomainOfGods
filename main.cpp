@@ -2,17 +2,22 @@
 
 #include "Src/Entity.h"
 #include "Src/Globals.h"
+#include "Src/Map.h"
+
+#include "UI/Render.h"
 
 using namespace std;
 
 int main(){
     GLOBALS::Init_Globals();
 
-    for (int i = 0; i < 100; i++)
-        cout << Entity({{rand(), rand(), rand()}, {}}, ENTITY_TYPE::UNKNOWN).Get_Name() << endl;
+    MAP::Init();
 
-    char umungus;
-    cin >> umungus;
+    Init_Render();
+
+    Render_Tick();
+
+    _sleep(INT32_MAX);
     return 0;    
 }
 
