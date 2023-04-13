@@ -2,6 +2,8 @@
 #include "Globals.h"
 #include "../Dependencies/TerGen.h"
 
+#include <math.h>
+#include <cmath>
 
 template<typename T>
 T Get_Rarity(Location location, const double Probability_Table[]){
@@ -75,7 +77,7 @@ string Get_Name_From_Table(T enum_type, const vector<const char*> name_table[]){
     return name_table[(int)enum_type][Random_Index];
 }
 
-ATTRIBUTES Lot_Attributes(Entity* e){
+ATTRIBUTES Lot_Attribute_Scalers(Entity* e){
     ATTRIBUTES Result;
 
     for (ATTRIBUTE_TYPES Current_Attribute = (ATTRIBUTE_TYPES)0; (int)Current_Attribute < (int)ATTRIBUTE_TYPES::END; Current_Attribute = (ATTRIBUTE_TYPES)((int)Current_Attribute + 1)){
@@ -93,29 +95,26 @@ ATTRIBUTES Lot_Attributes(Entity* e){
     return Result;
 }
 
-ATTRIBUTES Lot_Flat_Attributes(int Scaler){
+ATTRIBUTES Lot_Flat_Attributes(Specie_Descriptor* specie, Body_Part& limb){
     ATTRIBUTES Result;
 
-    for (ATTRIBUTE_TYPES Current_Attribute = (ATTRIBUTE_TYPES)0; (int)Current_Attribute < (int)ATTRIBUTE_TYPES::END; Current_Attribute = (ATTRIBUTE_TYPES)((int)Current_Attribute + 1)){
-        
-        // Lot if the current attribute is even given to the result.
-        if (Float_Range(0.0f, 1.0f) < ATTRIBUTE_Probabilities[(int)Current_Attribute]){
+    // First generate the pre determined attributes for the current specie.
+    SPECIE_MINMAX MinMaxs = SPECIE_MINMAX_VALUES.at(specie->Specie);
 
-            float Min = 1.f + (float)Scaler / 2.f;
-            float Max = 1.f + (float)Scaler * 2.f;
+    for (ATTRIBUTE_TYPES Attribute = (ATTRIBUTE_TYPES)0; (int)Attribute < (int)ATTRIBUTE_TYPES::END; Attribute = (ATTRIBUTE_TYPES)((int)Attribute + 1)){
+        if (MinMaxs.Maximum_Attributes.Attributes.find(Attribute) != MinMaxs.Maximum_Attributes.Attributes.end()){
+            Result.Attributes[Attribute] = Float_Range(MinMaxs.Minimum_Attributes.Attributes[Attribute], MinMaxs.Maximum_Attributes.Attributes[Attribute]);
+        }
+        else{
+            // Preferably this would be erased, and all the stats are rang- limited in the JSONS.
+            bool Extra_Modifier = Lot_Luck(&limb);
 
-            Result.Attributes[Current_Attribute] = Float_Range(Min, Max);
+            if (Extra_Modifier){
+                Result.Attributes[Attribute] = Float_Range(1.0f, (int)specie->Rank);
+            }
         }
     }
 
-    return Result;
-}
-
-// The rank and the location of the entity affects the Stats.
-STATS Lot_Stats(Entity* e){
-    STATS Result;
-    
-    Result.Power = Int_Range(GLOBALS::MIN_POWER, GLOBALS::MAX_POWER) * (int)e->Get_Rank();
 
     return Result;
 }
@@ -133,15 +132,37 @@ constexpr float Get_Cap_Value(float cap_as_percentage){
     return (0.5f / (1.f - cap_as_percentage));
 }
 
-bool Lot_Luck(ATTRIBUTES attr){
+bool Lot_Luck(Body_Part* limb){
     constexpr float MAX_LUCK_CAP = Get_Cap_Value(0.75f);
 
     float AGGRESSIVENESS = 0.2f;
 
     // a - e^(-bx) * a
-    float Max_Range = MAX_LUCK_CAP - (exp(-AGGRESSIVENESS * attr.Get(ATTRIBUTE_TYPES::LUCK))) * MAX_LUCK_CAP;
+    float Max_Range = MAX_LUCK_CAP - (exp(-AGGRESSIVENESS * limb->Get(ATTRIBUTE_TYPES::LUCK))) * MAX_LUCK_CAP;
 
     return Float_Range(0.f, max(Max_Range, 0.001f)) > 0.5f;
+}
+
+float Body_Part::Get(ATTRIBUTE_TYPES attr){
+
+    // The flat stat of the representing attribute.
+    float Flat = Flat_Stats.Get(attr);
+
+    if (Parent){
+        for (auto* limb : Parent->Body_Parts){
+            for (auto* equipped : limb->Equipped){
+                if (limb != this && equipped->Get_Type() != ENTITY_TYPE::AURA)
+                    continue;
+
+                Flat *= equipped->Get_Attribute(attr);
+            }
+        }
+    }   
+    else{
+        // This means that the limb has been cut off.
+        return Flat;
+    }
+
 }
 
 vector<Entity*> Lot_Items(Body_Part* limb, Location position){
@@ -149,22 +170,22 @@ vector<Entity*> Lot_Items(Body_Part* limb, Location position){
 
     // these items will not be equipped asap, but the limb is presented here so that we generate only usable loot.
     // The  Int_Range(false, true) is because we dont want to fully equip all the area.
-    for (int Current_Size = limb->Flat_Stats.Get(ATTRIBUTE_TYPES::SIZE); Current_Size > 0 && Lot_Luck(limb->Flat_Stats);){
+    for (int Current_Size = limb->Get(ATTRIBUTE_TYPES::SIZE); Current_Size > 0 && Lot_Luck(limb);){
 
         Entity* item = new Entity(position, ENTITY_TYPE::ITEM);
 
         Result.push_back(item);
 
-        Current_Size -= item->Get_Attribute(ATTRIBUTE_TYPES::SIZE);
+        Current_Size -= item->Get_Attribute(ATTRIBUTE_TYPES::WEIGHT);
     }
 
     return Result;
 }
 
-Body_Part Lot_Body_Part(RANK r, BODY_PART_TYPES type = BODY_PART_TYPES::UNKNOWN){
+Body_Part Lot_Body_Part(Specie_Descriptor* specie, BODY_PART_TYPES type = BODY_PART_TYPES::UNKNOWN){
     Body_Part Result;
 
-    Result.Flat_Stats = Lot_Flat_Attributes((int)r);
+    Result.Flat_Stats = Lot_Flat_Attributes(specie, Result);
 
     if (type == BODY_PART_TYPES::UNKNOWN)
         Result.Type = (BODY_PART_TYPES)Int_Range((int)BODY_PART_TYPES::UNKNOWN, (int)BODY_PART_TYPES::END);
@@ -185,17 +206,6 @@ ENTITY_TYPE Lot_Entity_Type(){
     return (ENTITY_TYPE)Int_Range((int)ENTITY_TYPE::UNKNOWN, (int)ENTITY_TYPE::END);
 }
 
-float Entity::Get_Attribute(ATTRIBUTE_TYPES type, bool Local){
-    float Result = 1.f;
-
-    if (Local)
-        Result *= Base_Stats.Local.Get(type);
-
-    Result *= Base_Stats.Global.Get(type) * Base_Stats.Power;
-
-    return Result;
-}
-
 Specie_Descriptor::Specie_Descriptor(Location position){
     Specie = Lot_Specie_Type(position);
     Name = SPECIES_Names[(int)Specie];
@@ -207,30 +217,34 @@ Specie_Descriptor::Specie_Descriptor(Location position){
     // 2x HANDS: 100%
     // 2x LEGS: 100%
 
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::HEAD)));
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::TORSO)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::HEAD)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::TORSO)));
 
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::HAND)));
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::HAND)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::HAND)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::HAND)));
 
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::LEG)));
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(Rank, BODY_PART_TYPES::LEG)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::LEG)));
+    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::LEG)));
+}
+
+Pattern* Lot_Pattern(){
+    return new Pattern();
 }
 
 Entity::Entity(Location position) : Entity(position, Lot_Entity_Type()){}
 
 Entity::Entity(Location location, ENTITY_TYPE type){
+    // Power is the descriptive value of an entity, whereas class is an upgradable value.
     Position = location;
     Type = type;
     Class = Lot_Class(location);
 
     if (Type == ENTITY_TYPE::ENTITY){
         Specie = Specie_Descriptor(location);
-        Base_Stats = Lot_Stats(this);
 
-        // lot the roles
-        for (int i = 0; i < Int_Range(0, Base_Stats.Power); i++){
-            Roles.push_back(
+        // lot the talents for now and let the entity decide later on.
+        for (int i = 0; i < Int_Range(0, (int)Specie.Rank); i++){
+            Talent.push_back(
                 Lot_Role(location)
             );
         }
@@ -243,10 +257,8 @@ Entity::Entity(Location location, ENTITY_TYPE type){
             this->Inventory.insert(this->Inventory.end(), tmp.begin(), tmp.end());
         }
     }
-    else{
-        // Entities dont need this, this is mainly for items.
-        Base_Stats.Global = Lot_Attributes(this);
-        Base_Stats.Local = Lot_Attributes(this);
+    else if (Type == ENTITY_TYPE::AURA || Type == ENTITY_TYPE::ITEM){
+        Template = Lot_Pattern();
 
     }
 
@@ -259,21 +271,27 @@ Entity::Entity(Location location, ENTITY_TYPE type){
 
 void Entity::AI(Body_Part* brain){
 
-    // TODO: make all the UI for action making.
+    // Randomize the priorities if the entity is high af.
 
+    // TODO: make all the UI for action making.
+    for (auto Priority : brain->Priorities){
+
+        
+
+    }
 
 }
 
 void Entity::Calculate_Passives(){
+    // because of the nature of this function looping through the body parts, only specie::entities have passive calculations.
     for (auto* limb : Specie.Body_Parts){
-        for (auto* equipped : limb->Equipped){
+        
+        for (auto& attr : limb->Flat_Stats.Attributes){
+            float Max_Attr_Value = SPECIE_MINMAX_VALUES.at(Specie.Specie).Maximum_Attributes.Get(attr.first);
 
-            // This is to calculate all the passives vector effects.
-            for (auto& Attribute : Current_Effects.Attributes){
-                if (Attribute.second < 1.f)
-                    Attribute.second = max(equipped->Get_Attribute(Attribute.first, false) + Attribute.second, 2.f);
-            }
+            attr.second = min(limb->Get(attr.first), Max_Attr_Value);
         }
+
     }
 }
 
@@ -281,7 +299,7 @@ void Entity::Calculate_Passives(){
 void Entity::Calculate_Effects(){
     for (auto& Effect : Current_Effects.Attributes){
         // Multiplies with the direction vector.
-        Stats.Attributes[Effect.first] *= Effect.second;
+        //Stats.Attributes[Effect.first] *= Effect.second;
     }
 }
 

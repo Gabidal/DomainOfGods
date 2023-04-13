@@ -9,9 +9,6 @@ namespace GLOBALS{
 
     extern void Init_Globals();
 
-    extern int MIN_POWER;
-    extern int MAX_POWER;
-
     extern bool DEBUG;
 
     extern int UPDATE_DISTANCE_X;

@@ -14,6 +14,11 @@
         "utility": "cpp",
         "xmemory": "cpp",
         "xtr1common": "cpp",
-        "xutility": "cpp"
-    }
+        "xutility": "cpp",
+        "limits": "cpp"
+    },
+    "cSpell.words": [
+        "GRACELING",
+        "Gracelings"
+    ]
 }
