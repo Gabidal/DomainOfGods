@@ -16,6 +16,7 @@ src = files(
   'Src/Entity.cpp',
   'Src/Globals.cpp',
   'Src/Map.cpp',
+  'Src/Chaos.cpp'
 
   'UI/Render.cpp',
 

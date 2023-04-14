@@ -15,22 +15,21 @@ namespace GLOBALS{
 
     bool DEBUG = true;
 
-    int UPDATE_DISTANCE_X = 100;
-    int UPDATE_DISTANCE_Y = 100;
+    const int UPDATE_DISTANCE_WIDTH = 100;
+    const int UPDATE_DISTANCE_HEIGHT = 100;
 
-    int RENDER_DISTANCE_X = 100;
-    int RENDER_DISTANCE_Y = 100;
+    const int RENDER_DISTANCE_WIDTH = 100;
+    const int RENDER_DISTANCE_HEIGHT = 100;
 
-    int WORLD_WIDTH = 100;
-    int WORLD_HEIGHT = 100;
+    const float ENTITY_DENSITY = 0.1f;
+    constexpr float MAX_LUCK_PERCENTAGE = 0.75f;
 
-    float ENTITY_DENSITY = 0.1f;
+    const int CHUNK_WIDTH = 100;
+    const int CHUNK_HEIGHT = 100;
+    const int CHUNK_DEPTH = 100;
 
-    int CHUNK_WIDTH = 100;
-    int CHUNK_HEIGHT = 100;
-    int CHUNK_DEPTH = 100;
-
-    float CAMERA_X = WORLD_WIDTH / 2;
-    float CAMERA_Y = WORLD_HEIGHT / 2;
+    // Center as {0, 0}
+    float CAMERA_X = 0;
+    float CAMERA_Y = 0;
 }
 

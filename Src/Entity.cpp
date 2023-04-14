@@ -1,9 +1,16 @@
 #include "Entity.h"
 #include "Globals.h"
 #include "../Dependencies/TerGen.h"
+#include "Chaos.h"
 
 #include <math.h>
 #include <cmath>
+
+void Location::Update_Chunk_Location(){
+    IVector3 chunk_size = {GLOBALS::CHUNK_WIDTH, GLOBALS::CHUNK_HEIGHT, GLOBALS::CHUNK_DEPTH};
+
+    CHUNK += HIGH % chunk_size;
+}
 
 template<typename T>
 T Get_Rarity(Location location, const double Probability_Table[]){
@@ -21,9 +28,9 @@ T Get_Rarity(Location location, const double Probability_Table[]){
     double Floor = -1;
 
     TerGen::Vector3 World_Position = {
-        location.HIGH.X + location.LOW.X * GLOBALS::CHUNK_WIDTH,
-        location.HIGH.Y + location.LOW.Y * GLOBALS::CHUNK_HEIGHT,
-        location.HIGH.Z + location.LOW.Z * GLOBALS::CHUNK_DEPTH
+        location.HIGH.X + location.CHUNK.X * GLOBALS::CHUNK_WIDTH,
+        location.HIGH.Y + location.CHUNK.Y * GLOBALS::CHUNK_HEIGHT,
+        location.HIGH.Z + location.CHUNK.Z * GLOBALS::CHUNK_DEPTH
     };
 
     double random = TerGen::Noise(World_Position, GLOBALS::Value_Noise); //(double)rand() / RAND_MAX;
@@ -77,6 +84,34 @@ string Get_Name_From_Table(T enum_type, const vector<const char*> name_table[]){
     return name_table[(int)enum_type][Random_Index];
 }
 
+Pattern* Lot_Pattern(){
+    return new Pattern();
+}
+
+constexpr float Get_Cap_Value(float cap_as_percentage){
+    // Solve:
+    // ((x - 0.5) / x) - cap
+    // (x / x) - (0.5 / x) = cap
+    // 1 - (0.5 / x) = cap
+    // - (0.5 / x) = cap -1
+    // 0.5 / x = -cap + 1
+    // 0.5 = (-cap + 1) * x
+    // 0.5/(-cap + 1) = ((-cap + 1) / (-cap + 1)) * x
+    // 0.5/(1 - cap) = x
+    return (0.5f / (1.f - cap_as_percentage));
+}
+
+bool Lot_Luck(Body_Part* limb){
+    const float MAX_LUCK_CAP = Get_Cap_Value(GLOBALS::MAX_LUCK_PERCENTAGE);
+
+    float AGGRESSIVENESS = 0.2f;
+
+    // a - e^(-bx) * a
+    float Max_Range = MAX_LUCK_CAP - (exp(-AGGRESSIVENESS * limb->Get(ATTRIBUTE_TYPES::LUCK))) * MAX_LUCK_CAP;
+
+    return Float_Range(0.f, max(Max_Range, 0.001f)) > 0.5f;
+}
+
 ATTRIBUTES Lot_Attribute_Scalers(Entity* e){
     ATTRIBUTES Result;
 
@@ -119,30 +154,6 @@ ATTRIBUTES Lot_Flat_Attributes(Specie_Descriptor* specie, Body_Part& limb){
     return Result;
 }
 
-constexpr float Get_Cap_Value(float cap_as_percentage){
-    // Solve:
-    // ((x - 0.5) / x) - cap
-    // (x / x) - (0.5 / x) = cap
-    // 1 - (0.5 / x) = cap
-    // - (0.5 / x) = cap -1
-    // 0.5 / x = -cap + 1
-    // 0.5 = (-cap + 1) * x
-    // 0.5/(-cap + 1) = ((-cap + 1) / (-cap + 1)) * x
-    // 0.5/(1 - cap) = x
-    return (0.5f / (1.f - cap_as_percentage));
-}
-
-bool Lot_Luck(Body_Part* limb){
-    constexpr float MAX_LUCK_CAP = Get_Cap_Value(0.75f);
-
-    float AGGRESSIVENESS = 0.2f;
-
-    // a - e^(-bx) * a
-    float Max_Range = MAX_LUCK_CAP - (exp(-AGGRESSIVENESS * limb->Get(ATTRIBUTE_TYPES::LUCK))) * MAX_LUCK_CAP;
-
-    return Float_Range(0.f, max(Max_Range, 0.001f)) > 0.5f;
-}
-
 float Body_Part::Get(ATTRIBUTE_TYPES attr){
 
     // The flat stat of the representing attribute.
@@ -161,6 +172,30 @@ float Body_Part::Get(ATTRIBUTE_TYPES attr){
     else{
         // This means that the limb has been cut off.
         return Flat;
+    }
+
+}
+
+float Body_Part::Get_Local_Passives(ATTRIBUTE_TYPES attr){
+    float Result = 0.0f;
+
+    for (auto* equipped : Equipped){
+        Result += equipped->Get_Attribute(attr);
+    }
+
+    return Result;
+}
+
+float Body_Part::Get_Global_Passives(ATTRIBUTE_TYPES attr){
+    float Result = 0.0f;
+
+    for (auto* limb : Parent->Body_Parts){
+        for (auto* equipped : limb->Equipped){
+            if (equipped->Get_Type() != ENTITY_TYPE::AURA)
+                continue;
+
+            Result += equipped->Get_Attribute(attr);
+        }
     }
 
 }
@@ -227,10 +262,6 @@ Specie_Descriptor::Specie_Descriptor(Location position){
     Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::LEG)));
 }
 
-Pattern* Lot_Pattern(){
-    return new Pattern();
-}
-
 Entity::Entity(Location position) : Entity(position, Lot_Entity_Type()){}
 
 Entity::Entity(Location location, ENTITY_TYPE type){
@@ -269,6 +300,111 @@ Entity::Entity(Location location, ENTITY_TYPE type){
     Info.History = Construct_Description();
 }
 
+void Entity::Heal(){
+
+    
+
+}
+
+void Entity::Run(){
+
+}
+
+void Entity::Path_Find(){
+
+}
+
+Entity* Entity::Select_Skill(Body_Part* brain){
+    // Make sure that the target is in bounds.
+    Update_Target(brain);
+
+
+}
+
+void Entity::Equip(){
+
+}
+
+float Body_Part::Get_Power_Level(){
+    float Result = 0.0f;
+
+    for (auto* equipped : Equipped) Result += equipped->Get_Power_Level();
+
+    for (auto& attr : Flat_Stats.Attributes) Result += attr.second; 
+}
+
+float Entity::Get_Power_Level(){
+    float Result = 0.0f;
+
+    // This will make sure that only equipped items are on display when scanning for power levels.
+    for (auto* limb : Specie.Body_Parts) Result += limb->Get_Power_Level();
+
+    // The change that this brings is so tiny that only HC, players will probably use.
+    float Scaler = 1 + (1.f - SPECIES_Probabilities[(int)Specie.Specie]);
+    Result *= Scaler;
+
+    // This will only be applied to items anyway, so it wont be as an big affecter as the rank.
+    Result *= max((int)Class, 1);
+
+    // This is only for entities, so because we multiply it last it will also have the greatest affect. 
+    Result *= max((int)Specie.Rank, 1);
+
+    return Result;
+}
+
+Entity* Entity::Select_Target(vector<Entity*> nearby, ENTITY_TYPE type){
+    float Own_Power_Level = Get_Power_Level();
+
+    for (auto* ent : nearby){
+        if (ent->Get_Type() != type)
+            continue;
+
+        if (ent->Get_Power_Level() <= Own_Power_Level)
+            return ent;
+    }
+
+    return nullptr;
+}
+
+// For the entity to "SEE" the target we will use the brains reach attribute.
+void Entity::Update_Target(Body_Part* brain){
+    vector<Entity*> Other_Entities = CHAOS::Get_Surrounding_Content(Position.CHUNK);
+
+    // just remove the this from the entity list, from having to check for it later one multiple times.
+    Other_Entities.erase(remove(Other_Entities.begin(), Other_Entities.end(), this), Other_Entities.end());
+
+    // if need of resources, then target trees or bushes or something idk.
+    // NOTE: NN anyone? No?
+    if (brain->Get(ATTRIBUTE_TYPES::HUNGER)){
+        // hunt entities.
+        Target = Select_Target(Other_Entities, ENTITY_TYPE::ENTITY);
+    }
+
+    // if angy, then target something and start attack?
+}
+
+void Entity::Act_With_Others(Body_Part* brain){
+    if (!Target)
+        return;
+
+    // check if the targeted is in range.
+    if (Get_Distance(Target) > brain->Get(ATTRIBUTE_TYPES::REACH))
+        return;
+
+    // 
+}
+
+float Entity::Get_Distance(Entity* other){
+    float Result = 0.f;
+
+    IVector3 chunk_sub = other->Position.CHUNK - Position.CHUNK;
+    FVector3 block_sub = other->Position.HIGH - Position.HIGH + chunk_sub;
+
+    Result += sqrt(block_sub.X * block_sub.X + block_sub.Y * block_sub.Y + block_sub.Z * block_sub.Z);
+
+    return Result;
+}
+
 void Entity::AI(Body_Part* brain){
 
     // Randomize the priorities if the entity is high af.
@@ -295,11 +431,22 @@ void Entity::Calculate_Passives(){
     }
 }
 
-// After all the passives have been accounted for we are going to apply them to the main flat stats.
+// After all the passives have been accounted for, we are going to apply them to the main flat stats.
 void Entity::Calculate_Effects(){
+    if (Type != ENTITY_TYPE::ENTITY)
+        return;
+
+    // The effect is diminished by the limb own local passives.
+    // Globals could be affecting these "curses" way before the infliction of the values to the flat stats.
     for (auto& Effect : Current_Effects.Attributes){
-        // Multiplies with the direction vector.
-        //Stats.Attributes[Effect.first] *= Effect.second;
+
+        for (auto* limb : Specie.Body_Parts){
+
+            // Because the effects are ranging from 0.0000001-esp to 1.99999+eps
+            limb->Flat_Stats.Attributes[Effect.first] *= Effect.second;
+
+            Effect.second *= limb->Get_Local_Passives(Effect.first);
+        }
     }
 }
 
@@ -311,31 +458,11 @@ void Entity::Tick(){
         if (limb->Type == BODY_PART_TYPES::HEAD)
             AI(limb);
 
-    // Addon to head decisions, the passives also must be calculated.
-    Calculate_Passives();
-
     // Now calculate how the curses and negative/positive effects affect the main stats
     Calculate_Effects();
 
-    Calculate_Locals();
-}
-
-void Entity::Calculate_Locals(){
-    for (auto* limb : Specie.Body_Parts){
-        if (limb->Flat_Stats.Get(ATTRIBUTE_TYPES::HEALTH) <= 0)
-            continue;
-
-        // now go through the limb equipped
-        for (auto* equipped : limb->Equipped){
-
-            // now go through the equipped items attributes
-            for (auto& Attribute : equipped->Current_Effects.Attributes){
-
-                // now we add the attribute to the local attribute list.
-                limb->Flat_Stats.Attributes[Attribute.first] *= Attribute.second;
-            }
-        }
-    }
+    // This needs to be after effect calculation, since passives might hit ceiling even tho the effect should have been compensated and thus reached full usage.
+    Calculate_Passives();
 }
 
 string Describe_Attribute_As_Adjective(bool is_positive){

@@ -32,15 +32,15 @@ UTF Render(Entity* e){
 void Render_Tick(){
     Terminal_Canvas* Canvas_Handle = GGUI::Main->Get_Elements<Terminal_Canvas>()[0];
 
-    int Start_Y = GLOBALS::CAMERA_Y - (GLOBALS::RENDER_DISTANCE_Y / 2);
-    int Start_X = GLOBALS::CAMERA_X - (GLOBALS::RENDER_DISTANCE_X / 2);
+    int Start_Y = GLOBALS::CAMERA_Y - (GLOBALS::RENDER_DISTANCE_HEIGHT / 2);
+    int Start_X = GLOBALS::CAMERA_X - (GLOBALS::RENDER_DISTANCE_WIDTH / 2);
 
-    int End_Y = GLOBALS::CAMERA_Y + (GLOBALS::RENDER_DISTANCE_Y / 2);
-    int End_X = GLOBALS::CAMERA_X + (GLOBALS::RENDER_DISTANCE_X / 2);
+    int End_Y = GLOBALS::CAMERA_Y + (GLOBALS::RENDER_DISTANCE_HEIGHT / 2);
+    int End_X = GLOBALS::CAMERA_X + (GLOBALS::RENDER_DISTANCE_WIDTH / 2);
 
     for (int y = Start_Y; y < End_Y; y++){
         for (int x = Start_X; x < End_X; x++){
-            Entity* Current_Entity = MAP::Entities[x + y * GLOBALS::RENDER_DISTANCE_X];
+            Entity* Current_Entity = MAP::Entities[x + y * GLOBALS::RENDER_DISTANCE_WIDTH];
 
             if (Current_Entity != nullptr){
                 if (x < Canvas_Handle->Get_Width() && y < Canvas_Handle->Get_Height())

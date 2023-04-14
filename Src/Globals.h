@@ -11,20 +11,18 @@ namespace GLOBALS{
 
     extern bool DEBUG;
 
-    extern int UPDATE_DISTANCE_X;
-    extern int UPDATE_DISTANCE_Y;
+    extern const int UPDATE_DISTANCE_WIDTH;
+    extern const int UPDATE_DISTANCE_HEIGHT;
 
-    extern int RENDER_DISTANCE_X;
-    extern int RENDER_DISTANCE_Y;
+    extern const int RENDER_DISTANCE_WIDTH;
+    extern const int RENDER_DISTANCE_HEIGHT;
 
-    extern int WORLD_WIDTH;
-    extern int WORLD_HEIGHT;
+    extern const float ENTITY_DENSITY;
+    extern const float MAX_LUCK_PERCENTAGE;
 
-    extern float ENTITY_DENSITY;
-
-    extern int CHUNK_WIDTH;
-    extern int CHUNK_HEIGHT;
-    extern int CHUNK_DEPTH;
+    extern const int CHUNK_WIDTH;
+    extern const int CHUNK_HEIGHT;
+    extern const int CHUNK_DEPTH;
 
     extern float CAMERA_X;
     extern float CAMERA_Y;

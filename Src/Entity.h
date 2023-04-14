@@ -8,6 +8,102 @@
 
 using namespace std;
 
+class IVector3{
+public:
+    int X = 0;
+    int Y = 0;
+    int Z = 0;
+
+    IVector3() = default;
+
+    IVector3(int x, int y, int z){
+        X = x;
+        Y = y;
+        Z = z;
+    }
+
+    IVector3(const IVector3& vec){
+        X = vec.X;
+        Y = vec.Y;
+        Z = vec.Z;
+    }
+
+    IVector3& operator=(const IVector3& vec){
+        X = vec.X;
+        Y = vec.Y;
+        Z = vec.Z;
+        return *this;
+    }
+
+    bool operator==(const IVector3& vec){
+        return X == vec.X && Y == vec.Y && Z == vec.Z;
+    }
+
+    IVector3 operator+(const IVector3& vec){
+        return IVector3(X + vec.X, Y + vec.Y, Z + vec.Z);
+    }
+
+    IVector3 operator-(const IVector3& vec){
+        return IVector3(X - vec.X, Y - vec.Y, Z - vec.Z);
+    }
+
+    IVector3 operator*(const IVector3& vec){
+        return IVector3(X * vec.X, Y * vec.Y, Z * vec.Z);
+    }
+
+    IVector3 operator/(const IVector3& vec){
+        return IVector3(X / vec.X, Y / vec.Y, Z / vec.Z);
+    }
+
+    IVector3 operator%(const IVector3& vec){
+        return IVector3(X % vec.X, Y % vec.Y, Z % vec.Z);
+    }
+
+    IVector3 operator+(int num){
+        return IVector3(X + num, Y + num, Z + num);
+    }
+
+    IVector3 operator-(int num){
+        return IVector3(X - num, Y - num, Z - num);
+    }
+
+    IVector3 operator*(int num){
+        return IVector3(X * num, Y * num, Z * num);
+    }
+
+    IVector3 operator/(int num){
+        return IVector3(X / num, Y / num, Z / num);
+    }
+
+    IVector3& operator+=(const IVector3& vec){
+        X += vec.X;
+        Y += vec.Y;
+        Z += vec.Z;
+        return *this;
+    }
+
+    IVector3& operator-=(const IVector3& vec){
+        X -= vec.X;
+        Y -= vec.Y;
+        Z -= vec.Z;
+        return *this;
+    }
+
+    IVector3& operator*=(const IVector3& vec){
+        X *= vec.X;
+        Y *= vec.Y;
+        Z *= vec.Z;
+        return *this;
+    }
+
+    IVector3& operator/=(const IVector3& vec){
+        X /= vec.X;
+        Y /= vec.Y;
+        Z /= vec.Z;
+        return *this;
+    }
+};
+
 class FVector3{
 public:
     float X = 0;
@@ -51,6 +147,18 @@ public:
         return FVector3(X / vec.X, Y / vec.Y, Z / vec.Z);
     }
 
+    FVector3 operator%(const FVector3& vec){
+        return FVector3(fmod(X, vec.X), fmod(Y, vec.Y), fmod(Z, vec.Z));
+    }
+
+    IVector3 operator%(const IVector3& vec){
+        return IVector3(fmod(X, vec.X), fmod(Y, vec.Y), fmod(Z, vec.Z));
+    }
+
+    FVector3 operator+(const IVector3& vec){
+        return FVector3(X + vec.X, Y + vec.Y, Z + vec.Z);
+    }
+
     FVector3 operator+(float num){
         return FVector3(X + num, Y + num, Z + num);
     }
@@ -89,94 +197,6 @@ public:
     }
 
     FVector3& operator/=(const FVector3& vec){
-        X /= vec.X;
-        Y /= vec.Y;
-        Z /= vec.Z;
-        return *this;
-    }
-};
-
-class IVector3{
-public:
-    int X = 0;
-    int Y = 0;
-    int Z = 0;
-
-    IVector3() = default;
-
-    IVector3(int x, int y, int z){
-        X = x;
-        Y = y;
-        Z = z;
-    }
-
-    IVector3(const IVector3& vec){
-        X = vec.X;
-        Y = vec.Y;
-        Z = vec.Z;
-    }
-
-    IVector3& operator=(const IVector3& vec){
-        X = vec.X;
-        Y = vec.Y;
-        Z = vec.Z;
-        return *this;
-    }
-
-    IVector3 operator+(const IVector3& vec){
-        return IVector3(X + vec.X, Y + vec.Y, Z + vec.Z);
-    }
-
-    IVector3 operator-(const IVector3& vec){
-        return IVector3(X - vec.X, Y - vec.Y, Z - vec.Z);
-    }
-
-    IVector3 operator*(const IVector3& vec){
-        return IVector3(X * vec.X, Y * vec.Y, Z * vec.Z);
-    }
-
-    IVector3 operator/(const IVector3& vec){
-        return IVector3(X / vec.X, Y / vec.Y, Z / vec.Z);
-    }
-
-    IVector3 operator+(int num){
-        return IVector3(X + num, Y + num, Z + num);
-    }
-
-    IVector3 operator-(int num){
-        return IVector3(X - num, Y - num, Z - num);
-    }
-
-    IVector3 operator*(int num){
-        return IVector3(X * num, Y * num, Z * num);
-    }
-
-    IVector3 operator/(int num){
-        return IVector3(X / num, Y / num, Z / num);
-    }
-
-    IVector3& operator+=(const IVector3& vec){
-        X += vec.X;
-        Y += vec.Y;
-        Z += vec.Z;
-        return *this;
-    }
-
-    IVector3& operator-=(const IVector3& vec){
-        X -= vec.X;
-        Y -= vec.Y;
-        Z -= vec.Z;
-        return *this;
-    }
-
-    IVector3& operator*=(const IVector3& vec){
-        X *= vec.X;
-        Y *= vec.Y;
-        Z *= vec.Z;
-        return *this;
-    }
-
-    IVector3& operator/=(const IVector3& vec){
         X /= vec.X;
         Y /= vec.Y;
         Z /= vec.Z;
@@ -349,9 +369,14 @@ const vector<string> Name_Table = {
 
 enum class ENTITY_TYPE{
     UNKNOWN,
-    ITEM,
-    ENTITY,
-    AURA,
+    
+    ITEM,       // ITEM
+
+    ENTITY,     // Living thing.
+    
+    AURA,       // GLOBALS PASSIVES, like re-gen aura.
+
+    SKILL,      // SKILL ability, like attack or also heal.
 
     END
 };
@@ -435,7 +460,7 @@ const double RANK_Probabilities[] = {
     0.99 * 0.00000001,  // FALSE_GOD
     0.99 * 0.0000000001,    // GOD
     0.99 * 0.000000000001,  // TRUE_GOD
-    0.01 * 0.0000000000001, // DOMAIN_HOLDER
+    std::numeric_limits<double>::min(), // DOMAIN_HOLDER
 };
 
 const vector<const char*> RANK_Names[] = {
@@ -452,79 +477,81 @@ const vector<const char*> RANK_Names[] = {
 class Location{
 public:
     FVector3 HIGH = {0, 0, 0};
-    IVector3 LOW = {0, 0, 0};
+    IVector3 CHUNK = {0, 0, 0};
 
     Location() = default;
 
     Location(FVector3 high, IVector3 low){
         HIGH = high;
-        LOW = low;
+        CHUNK = low;
     }
 
     Location(const Location& loc){
         HIGH = loc.HIGH;
-        LOW = loc.LOW;
+        CHUNK = loc.CHUNK;
     }
+
+    void Update_Chunk_Location();
 
     Location& operator=(const Location& loc){
         HIGH = loc.HIGH;
-        LOW = loc.LOW;
+        CHUNK = loc.CHUNK;
         return *this;
     }
 
     Location operator+(const Location& loc){
-        return Location(HIGH + loc.HIGH, LOW + loc.LOW);
+        return Location(HIGH + loc.HIGH, CHUNK + loc.CHUNK);
     }
 
     Location operator-(const Location& loc){
-        return Location(HIGH - loc.HIGH, LOW - loc.LOW);
+        return Location(HIGH - loc.HIGH, CHUNK - loc.CHUNK);
     }
 
     Location operator*(const Location& loc){
-        return Location(HIGH * loc.HIGH, LOW * loc.LOW);
+        return Location(HIGH * loc.HIGH, CHUNK * loc.CHUNK);
     }
 
     Location operator/(const Location& loc){
-        return Location(HIGH / loc.HIGH, LOW / loc.LOW);
+        return Location(HIGH / loc.HIGH, CHUNK / loc.CHUNK);
     }
 
     Location operator+(int num){
-        return Location(HIGH + num, LOW + num);
+        return Location(HIGH + num, CHUNK + num);
     }
 
     Location operator-(int num){
-        return Location(HIGH - num, LOW - num);
+        return Location(HIGH - num, CHUNK - num);
     }
 
     Location operator*(int num){
-        return Location(HIGH * num, LOW * num);
+        return Location(HIGH * num, CHUNK * num);
     }
 
     Location operator/(int num){
-        return Location(HIGH / num, LOW / num);
+        return Location(HIGH / num, CHUNK / num);
     }
 
     Location& operator+=(const Location& loc){
         HIGH += loc.HIGH;
-        LOW += loc.LOW;
+        CHUNK += loc.CHUNK;
         return *this;
     }
 
     Location& operator-=(const Location& loc){
         HIGH -= loc.HIGH;
-        LOW -= loc.LOW;
+        CHUNK -= loc.CHUNK;
         return *this;
     }
 
     Location& operator*=(const Location& loc){
         HIGH *= loc.HIGH;
-        LOW *= loc.LOW;
+        CHUNK *= loc.CHUNK;
         return *this;
     }
 
     Location& operator/=(const Location& loc){
         HIGH /= loc.HIGH;
-        LOW /= loc.LOW;
+        CHUNK /= loc.CHUNK;
         return *this;
     }
 };
@@ -539,6 +566,7 @@ enum class ATTRIBUTE_TYPES{
     AGILITY,              // 10% to get
     SIZE,                 // 10% to get
     WEIGHT,               // 10% to get
+    REACH,               // 10% to get
 
     // Mentals
     INTELLIGENCE,         // 10% to get
@@ -568,6 +596,7 @@ const double ATTRIBUTE_Probabilities[] = {
     0.1,    // AGILITY
     0.1,    // SIZE
     0.1,    // WEIGHT
+    0.1,    // REACH
 
     0.1,    // INTELLIGENCE
     0.1,    // MANA
@@ -594,6 +623,7 @@ const vector<const char*> ATTRIBUTE_Names[] = {
     {"agility", "dexterity"}, // AGILITY
     {"size", "mass"}, // SIZE
     {"weight", "mass"}, // WEIGHT
+    {"reach", "length"}, // REACH
 
     {"intelligence", "brain"}, // INTELLIGENCE
     {"mana", "magic"}, // MANA
@@ -1429,6 +1459,9 @@ public:
     Body_Part() = default;
 
     float Get(ATTRIBUTE_TYPES);
+    float Get_Local_Passives(ATTRIBUTE_TYPES);
+    float Get_Global_Passives(ATTRIBUTE_TYPES);
+    float Get_Power_Level();
 };
 
 class Specie_Descriptor{
@@ -1491,11 +1524,16 @@ protected:
     // - Deafness
     // - Fear
     // - Rage
+
     // Also used as the Global stat
     // - Auras
-    ATTRIBUTES Current_Effects;
 
-    // The flat stats are gotten from the body parts.
+    // These affects all the limbs, if not item.
+    ATTRIBUTES Current_Effects;
+    // NOTE: The flat stats are gotten from the body parts.
+
+    // For skill types:
+    Entity* Target = nullptr;
 
     // For AST
     Entity* Holder = nullptr;
@@ -1506,9 +1544,18 @@ public:
 
     void Tick();
     void AI(Body_Part* brain);
+    
+    // Actions:
+    void Heal();                // contains potion usage / eating [cooking if empty pockets :)] / 
+    void Run();                 // RUN !!!
+    void Path_Find();           // Resource gathering like water for thirst, food, currency.
+    Entity* Select_Skill(Body_Part* brain);        // Selects the skill to use, and uses it if needed (probably is).
+    void Equip();               // Equips the right armour depending on the environment.
+    void Update_Target(Body_Part* brain);       // Selects the target to interact with.
+    void Act_With_Others(Body_Part* brain);                 // Uses the skill on the target.
+
     void Calculate_Passives();
     void Calculate_Effects();
-    void Calculate_Locals();
     
 
     inline RANK Get_Rank(){ return Specie.Rank; }
@@ -1517,9 +1564,18 @@ public:
     inline string Get_Name() { return Info.ID; }
     inline ENTITY_TYPE Get_Type() { return Type; }
     inline float Get_Attribute(ATTRIBUTE_TYPES attr) { Current_Effects.Get(attr); }
+    inline vector<Entity*>& Get_Holding() { return Inventory; }
+    inline float Get_Power_Level();
+
+    inline void Add_Holding(Entity* e){ Inventory.push_back(e); }
+    inline void Remove_Holding(Entity* e){ Inventory.erase(std::remove(Inventory.begin(), Inventory.end(), e), Inventory.end()); }
+
+    inline Entity* Select_Target(vector<Entity*> nearby, ENTITY_TYPE type);
 
     inline string Construct_Name();
     inline string Construct_Description();
+
+    inline float Get_Distance(Entity* other);
 };
 
 

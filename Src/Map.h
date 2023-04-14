@@ -1,17 +1,30 @@
 #ifndef _MAP_H_
 #define _MAP_H_
 
+#include "Entity.h"
+
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <string>
 
 using namespace std;
 
-class Entity;
-
 namespace MAP{
 
-    extern vector<Entity*> Entities;
+    class Tile{
+    public:
+        // Chunk coordination if an single tile represents a whole chunk.
+        // HIGH coordination for detailed chunk mapping inside other tiles. 
+        Location Position;
+        void* Sprite;
+
+        vector<Tile*> Content;
+
+        Tile() = default;
+        Tile(Location position);
+    };
+
+    extern vector<Tile> Tiles;
 
     extern void Init_TerGen();
 
