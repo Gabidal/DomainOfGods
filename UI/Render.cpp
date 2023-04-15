@@ -40,12 +40,12 @@ void Render_Tick(){
 
     for (int y = Start_Y; y < End_Y; y++){
         for (int x = Start_X; x < End_X; x++){
-            Entity* Current_Entity = MAP::Entities[x + y * GLOBALS::RENDER_DISTANCE_WIDTH];
+            // Entity* Current_Entity = MAP::Entities[x + y * GLOBALS::RENDER_DISTANCE_WIDTH];
 
-            if (Current_Entity != nullptr){
-                if (x < Canvas_Handle->Get_Width() && y < Canvas_Handle->Get_Height())
-                    Canvas_Handle->Set(x, y, Render(Current_Entity), false);
-            }
+            // if (Current_Entity != nullptr){
+            //     if (x < Canvas_Handle->Get_Width() && y < Canvas_Handle->Get_Height())
+            //         Canvas_Handle->Set(x, y, Render(Current_Entity), false);
+            // }
         }
     }
 

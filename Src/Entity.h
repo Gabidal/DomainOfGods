@@ -5,6 +5,9 @@
 #include <string>
 #include <unordered_map>
 #include <limits>
+#include <cmath>
+#include <math.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -35,7 +38,16 @@ public:
         return *this;
     }
 
-    bool operator==(const IVector3& vec){
+    size_t operator()() const {
+        // hash
+        return (X * 73856093) ^ (Y * 19349663) ^ (Z * 83492791);
+    }
+
+    size_t operator()(const IVector3& key) const{
+        return (*this)();
+    }
+
+    bool operator==(const IVector3& vec) const{
         return X == vec.X && Y == vec.Y && Z == vec.Z;
     }
 
@@ -370,13 +382,13 @@ const vector<string> Name_Table = {
 enum class ENTITY_TYPE{
     UNKNOWN,
     
-    ITEM,       // ITEM
+    ITEM,       // Item, like sword or armor.
 
     ENTITY,     // Living thing.
     
-    AURA,       // GLOBALS PASSIVES, like re-gen aura.
+    AURA,       // GLOBALS PASSIVES, like re-gen aura. healing.
 
-    SKILL,      // SKILL ability, like attack or also heal.
+    SKILL,      // SKILL ability, like attack or teleportation.
 
     END
 };
@@ -558,33 +570,74 @@ public:
 
 enum class ATTRIBUTE_TYPES{
     // Physicals
-    HEALTH,               // 10% to get
-    HUNGER,               // 10% to get
-    THIRST,               // 10% to get
-    STRENGTH,             // 10% to get
-    DEXTERITY,            // 10% to get
-    AGILITY,              // 10% to get
-    SIZE,                 // 10% to get
-    WEIGHT,               // 10% to get
-    REACH,               // 10% to get
+    HEALTH,               // 10% to get,       "unkind", "shamed", "hating" | "Kind", "Caring", "Loving"
+    HUNGER,               // 10% to get,       "hungry" | "filling", "delicious"
+    THIRST,               // 10% to get,       "thirsty" | "refreshing", "delicious"
+    STRENGTH,             // 10% to get,       "weak", | "strong"
+    DEXTERITY,            // 10% to get,       "clumsy" | "deft"
+    SIZE,                 // 10% to get,       "tiny" | "massive"
+    WEIGHT,               // 10% to get,       "light", "levitating", "hollow" | "fat", "abessive", "your mom"
+    REACH,               // 10% to get,        "short" | "long"
+
+    // armour stuff
+    ARMOUR,             // 10% to get,    "fragile armour" | "protective armour", "armour"
+    // agility == evasion
+
+    // attack stuff
+    ARMOUR_PENETRATION, // 10% to get,     "dull", | "Piercing", "Sharp", "spiky", "rough", "weapon"
+    // attacks speed == (agility + strength) / 2
+    FIRE_DAMAGE,       // 10% to get,      "cold" | "Fire", "Flaming", "Burning"
+    ICE_DAMAGE,        // 10% to get,      "hot" | "cold", "icy", "frozen"
+    ELECTRICITY_DAMAGE, // 10% to get,    "insulated" | "electric", "shocking", "lightning"
+
+    // movement stuff
+    AGILITY,              // 10% to get,      "crippled" | "athletic"
+    // speed is for movement speed, whereas agility is the aerobatics in a fight.
+    SPEED,                  // 10% to get,     "slow" | "fast", "teleporting"
 
     // Mentals
-    INTELLIGENCE,         // 10% to get
-    MANA,                 // 10% to get
-    SANITY,               // 10% to get
+    INTELLIGENCE,         // 10% to get,      "stupid" | "wise"
+    MANA,                 // 10% to get,      "" | "arcane", "magical"
+    SANITY,               // 10% to get,      "insane", "murderous" | "sane"
 
     // MISC
-    LUCK,                 // 10% to get
-    RADIOACTIVITY,       // 10% to get
+    LUCK,                 // 10% to get,      "unlucky" | "lucky
 
     // Resistances
-    HEAT_RESISTANCE,      // 10% to get
-    COLD_RESISTANCE,      // 10% to get
-    ELECTRICITY_RESISTANCE, // 10% to get
-    POISON_RESISTANCE,    // 10% to get
-    ACID_RESISTANCE,      // 10% to get
+    HEAT_RESISTANCE,      // 10% to get,     "burning", "fire caching", "flammable" | "fireproof", "heatproof"
+    COLD_RESISTANCE,      // 10% to get,    "frozen", "icy", "cold" | "coldproof", "iceproof", "insulated"
+    ELECTRICITY_RESISTANCE, // 10% to get, "shocking", "lightning", "electric", "zapping" | "electrical", "insulated"
 
     END
+};
+
+const unordered_map<ATTRIBUTE_TYPES, pair<vector<const char*>, vector<const char*>>> ATTRIBUTE_DESCRIPTIONS = {
+    {ATTRIBUTE_TYPES::HEALTH, {{"unkind", "shamed", "hating"}, {"Kind", "Caring", "Loving"}}},
+    {ATTRIBUTE_TYPES::HUNGER, {{"hungry"}, {"filling", "delicious"}}},
+    {ATTRIBUTE_TYPES::THIRST, {{"thirsty"}, {"refreshing", "delicious"}}},
+    {ATTRIBUTE_TYPES::STRENGTH, {{"weak"}, {"strong"}}},
+    {ATTRIBUTE_TYPES::DEXTERITY, {{"clumsy"}, {"deft"}}},
+    {ATTRIBUTE_TYPES::SIZE, {{"tiny"}, {"massive"}}},
+    {ATTRIBUTE_TYPES::WEIGHT, {{"light", "levitating", "hollow"}, {"fat", "abessive", "your mom"}}},
+    {ATTRIBUTE_TYPES::REACH, {{"short"}, {"long"}}},
+
+    {ATTRIBUTE_TYPES::ARMOUR, {{"fragile armour"}, {"protective armour", "armour"}}},
+    {ATTRIBUTE_TYPES::ARMOUR_PENETRATION, {{"dull"}, {"Piercing", "Sharp", "spiky", "rough", "weapon"}}},
+    {ATTRIBUTE_TYPES::FIRE_DAMAGE, {{"cold"}, {"Fire", "Flaming", "Burning"}}},
+    {ATTRIBUTE_TYPES::ICE_DAMAGE, {{"hot"}, {"cold", "icy", "frozen"}}},
+    {ATTRIBUTE_TYPES::ELECTRICITY_DAMAGE, {{"insulated"}, {"electric", "shocking", "lightning"}}},
+
+    {ATTRIBUTE_TYPES::AGILITY, {{"crippled"}, {"athletic"}}},
+    {ATTRIBUTE_TYPES::SPEED, {{"slow"}, {"fast", "teleporting"}}},
+
+    {ATTRIBUTE_TYPES::INTELLIGENCE, {{"stupid"}, {"wise"}}},
+    {ATTRIBUTE_TYPES::MANA, {{}, {"arcane", "magical"}}},
+    {ATTRIBUTE_TYPES::SANITY, {{"insane", "murderous"}, {"sane"}}},
+    {ATTRIBUTE_TYPES::LUCK, {{"unlucky"}, {"lucky"}}},
+
+    {ATTRIBUTE_TYPES::HEAT_RESISTANCE, {{"burning", "fire caching", "flammable"}, {"fireproof", "heatproof"}}},
+    {ATTRIBUTE_TYPES::COLD_RESISTANCE, {{"frozen", "icy", "cold"}, {"coldproof", "iceproof", "insulated"}}},
+    {ATTRIBUTE_TYPES::ELECTRICITY_RESISTANCE, {{"shocking", "lightning", "electric", "zapping"}, {"electrical", "insulated"}}}
 };
 
 const double ATTRIBUTE_Probabilities[] = {
@@ -593,23 +646,29 @@ const double ATTRIBUTE_Probabilities[] = {
     0.1,    // THIRST
     0.1,    // STRENGTH
     0.1,    // DEXTERITY
-    0.1,    // AGILITY
     0.1,    // SIZE
     0.1,    // WEIGHT
     0.1,    // REACH
+
+    0.1,    // ARMOUR
+    0.1,    // ARMOUR_PENETRATION
+
+    0.1,    // FIRE_DAMAGE
+    0.1,    // ICE_DAMAGE
+    0.1,    // ELECTRICITY_DAMAGE
+
+    0.1,    // AGILITY
+    0.1,    // SPEED
 
     0.1,    // INTELLIGENCE
     0.1,    // MANA
     0.1,    // SANITY
 
     0.1,    // LUCK
-    0.1,    // RADIOACTIVITY
 
     0.1,    // HEAT_RESISTANCE
     0.1,    // COLD_RESISTANCE
     0.1,    // ELECTRICITY_RESISTANCE
-    0.1,    // POISON_RESISTANCE
-    0.1,    // ACID_RESISTANCE
 
     1.0,    // END
 };
@@ -618,25 +677,31 @@ const vector<const char*> ATTRIBUTE_Names[] = {
     {"health", "life"}, // HEALTH
     {"hunger", "food"}, // HUNGER
     {"thirst", "water"}, // THIRST
-    {"strength", "force"}, // STRENGTH
-    {"dexterity", "agility"}, // DEXTERITY
-    {"agility", "dexterity"}, // AGILITY
-    {"size", "mass"}, // SIZE
-    {"weight", "mass"}, // WEIGHT
-    {"reach", "length"}, // REACH
+    {"strength"}, // STRENGTH
+    {"dexterity"}, // DEXTERITY
+    {"size"}, // SIZE
+    {"weight"}, // WEIGHT
+    {"reach"}, // REACH
 
-    {"intelligence", "brain"}, // INTELLIGENCE
+    {"armour"}, // ARMOUR
+    {"armour penetration", "armour-penetration", "ap"}, // ARMOUR_PENETRATION
+
+    {"fire damage", "fire-damage", "fire", "flame"}, // FIRE_DAMAGE
+    {"ice damage", "ice-damage", "ice"}, // ICE_DAMAGE
+    {"electricity damage", "electricity-damage", "electricity", "electric"}, // ELECTRICITY_DAMAGE
+
+    {"agility"}, // AGILITY
+    {"speed"}, // SPEED
+
+    {"intelligence"}, // INTELLIGENCE
     {"mana", "magic"}, // MANA
-    {"sanity", "mind"}, // SANITY
+    {"sanity"}, // SANITY
 
-    {"luck", "fortune"}, // LUCK
-    {"radioactivity", "radioactive"}, // RADIOACTIVITY
+    {"luck"}, // LUCK
 
-    {"heat resistance", "heat"}, // HEAT_RESISTANCE
-    {"cold resistance", "cold"}, // COLD_RESISTANCE
-    {"electricity resistance", "electricity"}, // ELECTRICITY_RESISTANCE
-    {"poison resistance", "poison"}, // POISON_RESISTANCE
-    {"acid resistance", "acid"}, // ACID_RESISTANCE
+    {"heat resistance", "heat-resistance", "heat"}, // HEAT_RESISTANCE
+    {"cold resistance", "cold-resistance", "cold"}, // COLD_RESISTANCE
+    {"electricity resistance", "electricity-resistance", "electricity"}, // ELECTRICITY_RESISTANCE
 
     {"", ""},
 };
@@ -1487,13 +1552,13 @@ public:
 
 class String_Representation{
 public:
-    string ID = "";
+    string Name = "";
 
-    vector<string> Prefixes;
-    vector<string> Suffixes;
-
-    string History = "";
-
+    vector<string> SUBSTANTIVES;
+    vector<string> VERBS;
+    vector<string> ADJECTIVES;
+    
+    string Description = "";
 };
 
 class Pattern{
@@ -1539,6 +1604,7 @@ protected:
     Entity* Holder = nullptr;
     vector<Entity*> Inventory;
 public:
+    Entity() = default;
     Entity(Location position);
     Entity(Location position, ENTITY_TYPE type);
 
@@ -1561,19 +1627,18 @@ public:
     inline RANK Get_Rank(){ return Specie.Rank; }
     inline CLASS Get_Class(){ return Class; }
     inline Location Get_Position() { return Position; }
-    inline string Get_Name() { return Info.ID; }
+    inline string Get_Name() { return Info.Name; }
     inline ENTITY_TYPE Get_Type() { return Type; }
     inline float Get_Attribute(ATTRIBUTE_TYPES attr) { Current_Effects.Get(attr); }
     inline vector<Entity*>& Get_Holding() { return Inventory; }
     inline float Get_Power_Level();
 
     inline void Add_Holding(Entity* e){ Inventory.push_back(e); }
-    inline void Remove_Holding(Entity* e){ Inventory.erase(std::remove(Inventory.begin(), Inventory.end(), e), Inventory.end()); }
+    inline void Remove_Holding(Entity* e){ Inventory.erase(std::find(Inventory.begin(), Inventory.end(), e)); }
 
     inline Entity* Select_Target(vector<Entity*> nearby, ENTITY_TYPE type);
 
-    inline string Construct_Name();
-    inline string Construct_Description();
+    inline String_Representation Construct_Name();
 
     inline float Get_Distance(Entity* other);
 };

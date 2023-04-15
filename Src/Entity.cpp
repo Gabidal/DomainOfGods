@@ -296,8 +296,7 @@ Entity::Entity(Location location, ENTITY_TYPE type){
     // Run the tick for once to make sure everything is up to date.
     Tick();
 
-    Info.ID = Construct_Name();
-    Info.History = Construct_Description();
+    Info = Construct_Name();
 }
 
 void Entity::Heal(){
@@ -508,12 +507,28 @@ ATTRIBUTE_TYPES ATTRIBUTES::Get_Most_Low(){
     return Most_Low_Attribute;
 }
 
-string Entity::Construct_Name(){
-    return Name_Table[Int_Range(0, Name_Table.size() - 1)];
-}
+String_Representation Entity::Construct_Name(){
+    String_Representation Result;
 
-string Entity::Construct_Description(){
-    string Result = "";
+    // the name is usually empty if not an living entity.
+    if (Type == ENTITY_TYPE::ENTITY){
+        Result.Name = Name_Table[rand() % (Name_Table.size() - 1)];
+    }
+    else if (Type == ENTITY_TYPE::ITEM){
+        for (auto& attr : Current_Effects.Attributes){
+            bool Is_Positive = attr.second >= 1.f;
+
+            vector<const char*> variants;
+
+            if (Is_Positive)
+                variants = ATTRIBUTE_DESCRIPTIONS.at(attr.first).second;
+            else
+                variants = ATTRIBUTE_DESCRIPTIONS.at(attr.first).first;
+
+            Result.Name += string(variants[rand() % (variants.size() - 1)]) + " ";
+        }
+    }
 
     return Result;
 }
+

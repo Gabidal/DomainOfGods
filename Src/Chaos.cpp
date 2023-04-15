@@ -2,7 +2,7 @@
 
 namespace CHAOS{
 
-    unordered_map<IVector3, Entity> Entity_Chunks;
+    unordered_map<IVector3, Entity, IVector3> Entity_Chunks;
 
     vector<Entity*> Get_Chunk_Content(IVector3 position){
         return Entity_Chunks[position].Get_Holding();

@@ -66,9 +66,11 @@
         "xlocnum": "cpp",
         "xloctime": "cpp",
         "xstddef": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "*.rh": "cpp"
     },
     "cSpell.words": [
+        "EQUIPABLE",
         "GRACELING",
         "Gracelings"
     ]
