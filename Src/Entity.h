@@ -383,6 +383,8 @@ enum class ENTITY_TYPE{
     UNKNOWN,
     
     ITEM,       // Item, like sword or armor.
+    
+    CONSUMABLE, // food, potion, although potions differ from food when they have regeneration
 
     ENTITY,     // Living thing.
     
@@ -571,7 +573,7 @@ public:
 enum class ATTRIBUTE_TYPES{
     // Physicals
     HEALTH,               // 10% to get,       "unkind", "shamed", "hating" | "Kind", "Caring", "Loving"
-    HUNGER,               // 10% to get,       "hungry" | "filling", "delicious"
+    HUNGER,               // 10% to get,       "hungry" | "filling", "delicious".           Ranging from 0.f to 1.f independet if it is flat or scaling stat.
     THIRST,               // 10% to get,       "thirsty" | "refreshing", "delicious"
     STRENGTH,             // 10% to get,       "weak", | "strong"
     DEXTERITY,            // 10% to get,       "clumsy" | "deft"
@@ -608,6 +610,8 @@ enum class ATTRIBUTE_TYPES{
     COLD_RESISTANCE,      // 10% to get,    "frozen", "icy", "cold" | "coldproof", "iceproof", "insulated"
     ELECTRICITY_RESISTANCE, // 10% to get, "shocking", "lightning", "electric", "zapping" | "electrical", "insulated"
 
+    EFFICIENCY,           // 10% to get,     "inefficient" | "efficient"
+
     END
 };
 
@@ -637,7 +641,8 @@ const unordered_map<ATTRIBUTE_TYPES, pair<vector<const char*>, vector<const char
 
     {ATTRIBUTE_TYPES::HEAT_RESISTANCE, {{"burning", "fire caching", "flammable"}, {"fireproof", "heatproof"}}},
     {ATTRIBUTE_TYPES::COLD_RESISTANCE, {{"frozen", "icy", "cold"}, {"coldproof", "iceproof", "insulated"}}},
-    {ATTRIBUTE_TYPES::ELECTRICITY_RESISTANCE, {{"shocking", "lightning", "electric", "zapping"}, {"electrical", "insulated"}}}
+    {ATTRIBUTE_TYPES::ELECTRICITY_RESISTANCE, {{"shocking", "lightning", "electric", "zapping"}, {"electrical", "insulated"}}},
+    {ATTRIBUTE_TYPES::EFFICIENCY, {{"inefficient"}, {"efficient"}}},
 };
 
 const double ATTRIBUTE_Probabilities[] = {
@@ -669,6 +674,8 @@ const double ATTRIBUTE_Probabilities[] = {
     0.1,    // HEAT_RESISTANCE
     0.1,    // COLD_RESISTANCE
     0.1,    // ELECTRICITY_RESISTANCE
+
+    0.1,    // EFFICIENCY
 
     1.0,    // END
 };
@@ -703,6 +710,8 @@ const vector<const char*> ATTRIBUTE_Names[] = {
     {"cold resistance", "cold-resistance", "cold"}, // COLD_RESISTANCE
     {"electricity resistance", "electricity-resistance", "electricity"}, // ELECTRICITY_RESISTANCE
 
+    {"efficiency", "efficency"}, // EFFICIENCY
+
     {"", ""},
 };
 
@@ -727,7 +736,7 @@ public:
             return 1.f;   // Passive.
     }
 
-    pair<ATTRIBUTE_TYPES, float> Get_Most_Aggressive();
+    ATTRIBUTE_TYPES Get_Most_Aggressive();
 
     ATTRIBUTE_TYPES Get_Most_Low();
 
@@ -1519,7 +1528,7 @@ public:
     vector<class Entity*> Equipped;
     vector<ATTRIBUTE_TYPES> Priorities;
 
-    class Specie_Descriptor* Parent = nullptr;
+    class Specie_Descriptor* Body = nullptr;
 
     Body_Part() = default;
 
@@ -1538,6 +1547,8 @@ public:
     
     // Theses are pointer since when a limb is cut of it stays and someone other can pick it up.
     vector<Body_Part*> Body_Parts; 
+
+    class Entity* Parent_Entity;
 
     Specie_Descriptor() = default;
     Specie_Descriptor(Location position);
@@ -1561,10 +1572,72 @@ public:
     string Description = "";
 };
 
-class Pattern{
-public:
+enum class TASK_TYPES{
+    UNKNOWN,
+    FIGHT,
+    LOOT,
+    FIND,
 
 };
+
+class Task_Base{
+public:
+    // This is for functions to handle things.
+    TASK_TYPES Type;
+    bool Is_Critical = false;
+    bool Is_Done = false;
+
+    Body_Part* Limb = nullptr;
+
+    Task_Base() = default;
+
+    virtual void Do();  // for UNKNOWN
+};
+
+class Fight : public Task_Base{
+public:
+    class Entity* Target;
+    class Entity* Skill;    // this contains a weapon of choice or an skill.
+
+    Fight(class Entity* target);
+    Fight(ENTITY_TYPE type_to_fight);
+
+    // after killed the enemy initiate Looting task.
+    void Do() override;
+};
+
+class Loot : public Task_Base{
+public:
+    class Entity* Lootable;
+
+    Loot(class Entity* lootable) : Lootable(lootable) {}
+
+    // if the lootable isn't in reach, then initiate path find task
+    void Do() override;
+};
+
+class Find : public Task_Base{
+public:
+    Location Target_Position;
+    ENTITY_TYPE Target_Type;
+
+    TASK_TYPES Prefer_Action_After_Find;
+
+    Find(Location target, TASK_TYPES prefer_action_after_find) : Target_Position(target), Prefer_Action_After_Find(prefer_action_after_find) {}
+    Find(ENTITY_TYPE type, TASK_TYPES prefer_action_after_find) : Target_Type(type), Prefer_Action_After_Find(prefer_action_after_find) {}
+
+    void Do() override;
+};
+
+class Consume : public Task_Base{
+public:
+    ATTRIBUTE_TYPES Lacking_Attribute;
+
+    Consume(ATTRIBUTE_TYPES lacking_attribute) : Lacking_Attribute(lacking_attribute) {}
+
+    void Do() override;
+};
+
 
 class Entity{
 protected:
@@ -1576,7 +1649,7 @@ protected:
     vector<ROLE> Roles;
     vector<ROLE> Talent;    // if the role is pointing to same type as the talent the entity gets an bonus output.
     Specie_Descriptor Specie;
-    Pattern* Template;
+    vector<Task_Base*> Tasks;
 
     // The current state vectors, this includes:
     // - Bleed
@@ -1597,9 +1670,6 @@ protected:
     ATTRIBUTES Current_Effects;
     // NOTE: The flat stats are gotten from the body parts.
 
-    // For skill types:
-    Entity* Target = nullptr;
-
     // For AST
     Entity* Holder = nullptr;
     vector<Entity*> Inventory;
@@ -1611,19 +1681,16 @@ public:
     void Tick();
     void AI(Body_Part* brain);
     
-    // Actions:
-    void Heal();                // contains potion usage / eating [cooking if empty pockets :)] / 
-    void Run();                 // RUN !!!
-    void Path_Find();           // Resource gathering like water for thirst, food, currency.
-    Entity* Select_Skill(Body_Part* brain);        // Selects the skill to use, and uses it if needed (probably is).
-    void Equip();               // Equips the right armour depending on the environment.
-    void Update_Target(Body_Part* brain);       // Selects the target to interact with.
-    void Act_With_Others(Body_Part* brain);                 // Uses the skill on the target.
+    // State Analyzers
+    void Stack_Mundane_Tasks(Body_Part* brain);
+    void Stack_Critical_Tasks(Body_Part* brain);
 
+    // Passives
     void Calculate_Passives();
     void Calculate_Effects();
+    void Passive_Heal_With(ATTRIBUTE_TYPES replenisher);
+    void Re_Order_Tasks();
     
-
     inline RANK Get_Rank(){ return Specie.Rank; }
     inline CLASS Get_Class(){ return Class; }
     inline Location Get_Position() { return Position; }
@@ -1632,6 +1699,10 @@ public:
     inline float Get_Attribute(ATTRIBUTE_TYPES attr) { Current_Effects.Get(attr); }
     inline vector<Entity*>& Get_Holding() { return Inventory; }
     inline float Get_Power_Level();
+    inline Task_Base* Get_Next_Task();
+    inline void Add_Task(Task_Base* task) { Tasks.push_back(task); }
+
+    inline void Update_Attribute(ATTRIBUTE_TYPES type, float new_value) { Current_Effects.Attributes[type] = new_value; }
 
     inline void Add_Holding(Entity* e){ Inventory.push_back(e); }
     inline void Remove_Holding(Entity* e){ Inventory.erase(std::find(Inventory.begin(), Inventory.end(), e)); }

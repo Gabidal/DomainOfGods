@@ -84,10 +84,6 @@ string Get_Name_From_Table(T enum_type, const vector<const char*> name_table[]){
     return name_table[(int)enum_type][Random_Index];
 }
 
-Pattern* Lot_Pattern(){
-    return new Pattern();
-}
-
 constexpr float Get_Cap_Value(float cap_as_percentage){
     // Solve:
     // ((x - 0.5) / x) - cap
@@ -110,6 +106,11 @@ bool Lot_Luck(Body_Part* limb){
     float Max_Range = MAX_LUCK_CAP - (exp(-AGGRESSIVENESS * limb->Get(ATTRIBUTE_TYPES::LUCK))) * MAX_LUCK_CAP;
 
     return Float_Range(0.f, max(Max_Range, 0.001f)) > 0.5f;
+}
+
+// returns
+float Transform_To_Non_Linear(float Full){
+    return Full * 0.75f;
 }
 
 ATTRIBUTES Lot_Attribute_Scalers(Entity* e){
@@ -159,8 +160,8 @@ float Body_Part::Get(ATTRIBUTE_TYPES attr){
     // The flat stat of the representing attribute.
     float Flat = Flat_Stats.Get(attr);
 
-    if (Parent){
-        for (auto* limb : Parent->Body_Parts){
+    if (Body){
+        for (auto* limb : Body->Body_Parts){
             for (auto* equipped : limb->Equipped){
                 if (limb != this && equipped->Get_Type() != ENTITY_TYPE::AURA)
                     continue;
@@ -189,7 +190,7 @@ float Body_Part::Get_Local_Passives(ATTRIBUTE_TYPES attr){
 float Body_Part::Get_Global_Passives(ATTRIBUTE_TYPES attr){
     float Result = 0.0f;
 
-    for (auto* limb : Parent->Body_Parts){
+    for (auto* limb : Body->Body_Parts){
         for (auto* equipped : limb->Equipped){
             if (equipped->Get_Type() != ENTITY_TYPE::AURA)
                 continue;
@@ -289,7 +290,7 @@ Entity::Entity(Location location, ENTITY_TYPE type){
         }
     }
     else if (Type == ENTITY_TYPE::AURA || Type == ENTITY_TYPE::ITEM){
-        Template = Lot_Pattern();
+        
 
     }
 
@@ -297,31 +298,6 @@ Entity::Entity(Location location, ENTITY_TYPE type){
     Tick();
 
     Info = Construct_Name();
-}
-
-void Entity::Heal(){
-
-    
-
-}
-
-void Entity::Run(){
-
-}
-
-void Entity::Path_Find(){
-
-}
-
-Entity* Entity::Select_Skill(Body_Part* brain){
-    // Make sure that the target is in bounds.
-    Update_Target(brain);
-
-
-}
-
-void Entity::Equip(){
-
 }
 
 float Body_Part::Get_Power_Level(){
@@ -365,34 +341,6 @@ Entity* Entity::Select_Target(vector<Entity*> nearby, ENTITY_TYPE type){
     return nullptr;
 }
 
-// For the entity to "SEE" the target we will use the brains reach attribute.
-void Entity::Update_Target(Body_Part* brain){
-    vector<Entity*> Other_Entities = CHAOS::Get_Surrounding_Content(Position.CHUNK);
-
-    // just remove the this from the entity list, from having to check for it later one multiple times.
-    Other_Entities.erase(remove(Other_Entities.begin(), Other_Entities.end(), this), Other_Entities.end());
-
-    // if need of resources, then target trees or bushes or something idk.
-    // NOTE: NN anyone? No?
-    if (brain->Get(ATTRIBUTE_TYPES::HUNGER)){
-        // hunt entities.
-        Target = Select_Target(Other_Entities, ENTITY_TYPE::ENTITY);
-    }
-
-    // if angy, then target something and start attack?
-}
-
-void Entity::Act_With_Others(Body_Part* brain){
-    if (!Target)
-        return;
-
-    // check if the targeted is in range.
-    if (Get_Distance(Target) > brain->Get(ATTRIBUTE_TYPES::REACH))
-        return;
-
-    // 
-}
-
 float Entity::Get_Distance(Entity* other){
     float Result = 0.f;
 
@@ -402,6 +350,62 @@ float Entity::Get_Distance(Entity* other){
     Result += sqrt(block_sub.X * block_sub.X + block_sub.Y * block_sub.Y + block_sub.Z * block_sub.Z);
 
     return Result;
+}
+
+// TASK SPACE
+
+// The default do
+void Task_Base::Do(){
+
+}
+
+
+
+
+// the consume do function
+void Consume::Do(){
+    // try to find any consumable items from the entity.
+    for (auto& item : Limb->Body->Parent_Entity->Get_Holding()){
+        if (item->Get_Type() != ENTITY_TYPE::CONSUMABLE)
+            continue;
+
+        // now check if the consumable even can fix the lacking attribute, if not then go to next consumable.
+        if (item->Get_Attribute(Lacking_Attribute) <= 1.f)  // where lesser than 1 means negative, and 1 means attribute doesn't exist or it wont affect.
+            continue;
+
+        // maybe in need of transformation scaler.
+        Limb->Flat_Stats.Attributes[Lacking_Attribute] *= item->Get_Attribute(Lacking_Attribute);
+
+        // now also consume the consumable
+        item->Update_Attribute(ATTRIBUTE_TYPES::HEALTH, item->Get_Attribute(Lacking_Attribute) / (2 / item->Get_Attribute(ATTRIBUTE_TYPES::EFFICIENCY)));
+
+        // re-gen consumable if possible (potions)
+        item->Tick();
+
+        // if the consumable doesn't have any re-gen and its depleted, then remove the item.
+        if (item->Get_Attribute(ATTRIBUTE_TYPES::HEALTH) <= 0.f)
+            Limb->Body->Parent_Entity->Remove_Holding(item);
+    }
+}
+
+// END OF TASK SPACE
+
+// mundane tasks will usually contain tasks like: eating, drinking, sleeping, adventuring
+void Entity::Stack_Mundane_Tasks(Body_Part* brain){
+
+
+
+}
+
+// Critical tasks are if HEALTH is near zero
+void Entity::Stack_Critical_Tasks(Body_Part* brain){
+    // check if the brains flat health is near zero
+    float Current_Health_State = brain->Get(ATTRIBUTE_TYPES::HEALTH) / SPECIE_MINMAX_VALUES.at(Specie.Specie).Maximum_Attributes.Get(ATTRIBUTE_TYPES::HEALTH);
+
+    if (Current_Health_State < 0.2f){
+        Tasks.push_back(new Consume(ATTRIBUTE_TYPES::HEALTH));
+    }
+
 }
 
 void Entity::AI(Body_Part* brain){
@@ -415,6 +419,10 @@ void Entity::AI(Body_Part* brain){
 
     }
 
+    
+    Stack_Mundane_Tasks(brain);
+    Stack_Critical_Tasks(brain);
+    Re_Order_Tasks();
 }
 
 void Entity::Calculate_Passives(){
@@ -428,6 +436,33 @@ void Entity::Calculate_Passives(){
         }
 
     }
+}
+
+// goes through all limbs and checks if their HP is lower than what can be, then use some of the hunger bar to re-gen HP.
+void Entity::Passive_Heal_With(ATTRIBUTE_TYPES replenisher){
+    for (auto* limb : Specie.Body_Parts){
+        float Current_HP_Difference = abs(limb->Get(ATTRIBUTE_TYPES::HEALTH) - SPECIE_MINMAX_VALUES.at(Specie.Specie).Maximum_Attributes.Get(ATTRIBUTE_TYPES::HEALTH));
+
+        //The hunger stat is always from 0.f to 1.f. So if the hunger is full then it will also heal fully.
+        limb->Flat_Stats.Attributes[ATTRIBUTE_TYPES::HEALTH] += Transform_To_Non_Linear(Current_HP_Difference * limb->Get(replenisher));
+
+        // only take a fraction of the hunger if the HP difference was larger than zero.
+        limb->Flat_Stats.Attributes[replenisher] /= max(2 * (Current_HP_Difference / 10), 1.f);
+    }
+}
+
+// Puts the critical tasks 
+void Entity::Re_Order_Tasks(){
+    // first clean done tasks.
+    // breaks immediately if before done task is an undone task. 
+    for (int i = Tasks.size() - 1; i >= 0 && Tasks[i]->Is_Done; i--){
+        Tasks.erase(Tasks.begin() + i);
+    }
+
+    // sort vector list
+    sort(Tasks.rbegin(), Tasks.rend(), [](Task_Base* a, Task_Base* b){
+        return a->Is_Done > b->Is_Done;
+    });
 }
 
 // After all the passives have been accounted for, we are going to apply them to the main flat stats.
@@ -452,16 +487,19 @@ void Entity::Calculate_Effects(){
 void Entity::Tick(){
     ATTRIBUTES New_Stats = Current_Effects;    
 
-    // For each head the entity can make an decision per tick.
-    for (auto* limb : Specie.Body_Parts)
-        if (limb->Type == BODY_PART_TYPES::HEAD)
-            AI(limb);
+    Passive_Heal_With(ATTRIBUTE_TYPES::HUNGER);
+    Passive_Heal_With(ATTRIBUTE_TYPES::THIRST);
 
     // Now calculate how the curses and negative/positive effects affect the main stats
     Calculate_Effects();
 
     // This needs to be after effect calculation, since passives might hit ceiling even tho the effect should have been compensated and thus reached full usage.
     Calculate_Passives();
+
+    // For each head the entity can make an decision per tick.
+    for (auto* limb : Specie.Body_Parts)
+        if (limb->Type == BODY_PART_TYPES::HEAD)
+            AI(limb);
 }
 
 string Describe_Attribute_As_Adjective(bool is_positive){
@@ -476,21 +514,18 @@ string Describe_Attribute_As_Adjective(bool is_positive){
     return Result;
 }
 
-pair<ATTRIBUTE_TYPES, float> ATTRIBUTES::Get_Most_Aggressive(){
-    float Most_Aggressive_Attribute_Value = 1.f;
-    ATTRIBUTE_TYPES Most_Aggressive_Attribute = (ATTRIBUTE_TYPES)0;
+ATTRIBUTE_TYPES ATTRIBUTES::Get_Most_Aggressive(){
+    float Most_High_Attribute_Value = 1.f;
+    ATTRIBUTE_TYPES Most_High_Attribute = (ATTRIBUTE_TYPES)0;
 
-    // Calculate the prefixes
-    for (ATTRIBUTE_TYPES Current_Attribute = (ATTRIBUTE_TYPES)0; (int)Current_Attribute < (int)ATTRIBUTE_TYPES::END; Current_Attribute = (ATTRIBUTE_TYPES)((int)Current_Attribute + 1)){
-        float Current_Value = Get(Current_Attribute);
-
-        if (abs(Current_Value - 1.f) > abs(Most_Aggressive_Attribute_Value - 1.f)){
-            Most_Aggressive_Attribute_Value = Current_Value;
-            Most_Aggressive_Attribute = Current_Attribute;
+    for (auto i : Attributes){
+        if (i.second > Most_High_Attribute_Value){
+            Most_High_Attribute_Value = i.second;
+            Most_High_Attribute = i.first;
         }
     }
 
-    return make_pair(Most_Aggressive_Attribute, Most_Aggressive_Attribute_Value);
+    return Most_High_Attribute;
 }
 
 ATTRIBUTE_TYPES ATTRIBUTES::Get_Most_Low(){
@@ -520,6 +555,7 @@ String_Representation Entity::Construct_Name(){
 
             vector<const char*> variants;
 
+            // We could use just vector instead of an pair, to then access the second by adding the boolean.
             if (Is_Positive)
                 variants = ATTRIBUTE_DESCRIPTIONS.at(attr.first).second;
             else
