@@ -364,6 +364,8 @@ void Task_Base::Do(){
 
 // the consume do function
 void Consume::Do(){
+    bool Found_Any_Usable_Consumables = false;
+
     // try to find any consumable items from the entity.
     for (auto& item : Limb->Body->Parent_Entity->Get_Holding()){
         if (item->Get_Type() != ENTITY_TYPE::CONSUMABLE)
@@ -372,6 +374,8 @@ void Consume::Do(){
         // now check if the consumable even can fix the lacking attribute, if not then go to next consumable.
         if (item->Get_Attribute(Lacking_Attribute) <= 1.f)  // where lesser than 1 means negative, and 1 means attribute doesn't exist or it wont affect.
             continue;
+
+        Found_Any_Usable_Consumables = true;
 
         // maybe in need of transformation scaler.
         Limb->Flat_Stats.Attributes[Lacking_Attribute] *= item->Get_Attribute(Lacking_Attribute);
@@ -385,7 +389,45 @@ void Consume::Do(){
         // if the consumable doesn't have any re-gen and its depleted, then remove the item.
         if (item->Get_Attribute(ATTRIBUTE_TYPES::HEALTH) <= 0.f)
             Limb->Body->Parent_Entity->Remove_Holding(item);
+
+        //if the health is about 90% then this task is done.
+        if (Limb->Flat_Stats.Attributes[Lacking_Attribute] >= 0.9f)
+            Is_Done = true;
     }
+
+    // there were no consumables, find one.
+    if (!Found_Any_Usable_Consumables){
+        vector<Entity*> Close_By_Entities = CHAOS::Get_Surrounding_Content(Limb->Body->Parent_Entity->Get_Position().CHUNK);
+        
+        // Priorities to try to find the consumable.
+        // this makes the entity to try to ask/loot other entities, if none of the above will satisfy the needs, then act with fists.
+        for (auto* ent : Close_By_Entities){
+            Limb->Body->Parent_Entity->Add_Task(new Loot(ent, {{{Lacking_Attribute, 1.f}}}));
+        }
+
+        Limb->Body->Parent_Entity->Add_Task(
+            new Condition(
+                [&](){ 
+                    float Health_Percentage = Limb->Flat_Stats.Attributes[Lacking_Attribute] / SPECIE_MINMAX_VALUES.at(Limb->Body->Parent_Entity->Get_Specie()->Specie).Maximum_Attributes.Get(Lacking_Attribute);
+
+                     // check if the health is now reasonable.
+                    if (Health_Percentage >= 0.9f){
+                        Is_Done = true;
+                        return false;
+                    }
+                }, 
+                new Fight(ENTITY_TYPE::ENTITY),
+                nullptr
+            )
+        );
+    }
+}
+
+void Condition::Do(){
+    if (Condition_Func())
+        Limb->Body->Parent_Entity->Add_Task(True);
+    else
+        Limb->Body->Parent_Entity->Add_Task(False);
 }
 
 // END OF TASK SPACE

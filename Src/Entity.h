@@ -8,6 +8,7 @@
 #include <cmath>
 #include <math.h>
 #include <algorithm>
+#include <functional>
 
 using namespace std;
 
@@ -1577,7 +1578,8 @@ enum class TASK_TYPES{
     FIGHT,
     LOOT,
     FIND,
-
+    CONSUME,
+    CONDITION,
 };
 
 class Task_Base{
@@ -1610,7 +1612,10 @@ class Loot : public Task_Base{
 public:
     class Entity* Lootable;
 
-    Loot(class Entity* lootable) : Lootable(lootable) {}
+    ATTRIBUTES Preferred_Attributes;
+
+    Loot(class Entity* lootable) : Lootable(lootable) { Type = TASK_TYPES::LOOT;  }
+    Loot(class Entity* lootable, ATTRIBUTES preferred_attributes) : Lootable(lootable), Preferred_Attributes(preferred_attributes) { Type = TASK_TYPES::LOOT; }
 
     // if the lootable isn't in reach, then initiate path find task
     void Do() override;
@@ -1623,8 +1628,8 @@ public:
 
     TASK_TYPES Prefer_Action_After_Find;
 
-    Find(Location target, TASK_TYPES prefer_action_after_find) : Target_Position(target), Prefer_Action_After_Find(prefer_action_after_find) {}
-    Find(ENTITY_TYPE type, TASK_TYPES prefer_action_after_find) : Target_Type(type), Prefer_Action_After_Find(prefer_action_after_find) {}
+    Find(Location target, TASK_TYPES prefer_action_after_find) : Target_Position(target), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND;  }
+    Find(ENTITY_TYPE type, TASK_TYPES prefer_action_after_find) : Target_Type(type), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND;  }
 
     void Do() override;
 };
@@ -1633,11 +1638,22 @@ class Consume : public Task_Base{
 public:
     ATTRIBUTE_TYPES Lacking_Attribute;
 
-    Consume(ATTRIBUTE_TYPES lacking_attribute) : Lacking_Attribute(lacking_attribute) {}
+    Consume(ATTRIBUTE_TYPES lacking_attribute) : Lacking_Attribute(lacking_attribute) { Type = TASK_TYPES::CONSUME; }
 
     void Do() override;
 };
 
+class Condition : public Task_Base{
+public:
+    Task_Base* True = nullptr;
+    Task_Base* False = nullptr;
+
+    function<bool()> Condition_Func;
+
+    Condition(function<bool()> condition_func, Task_Base* true_task, Task_Base* false_task) : Condition_Func(condition_func), True(true_task), False(false_task) { Type = TASK_TYPES::CONDITION; }
+
+    void Do() override;
+};
 
 class Entity{
 protected:
@@ -1701,6 +1717,7 @@ public:
     inline float Get_Power_Level();
     inline Task_Base* Get_Next_Task();
     inline void Add_Task(Task_Base* task) { Tasks.push_back(task); }
+    inline Specie_Descriptor* Get_Specie() { return &Specie; }
 
     inline void Update_Attribute(ATTRIBUTE_TYPES type, float new_value) { Current_Effects.Attributes[type] = new_value; }
 
