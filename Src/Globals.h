@@ -3,6 +3,8 @@
 
 #include "../Dependencies/TerGen.h"
 
+class IVector3;
+
 namespace GLOBALS{
 
     extern TerGen::Generator* Value_Noise;
@@ -24,8 +26,9 @@ namespace GLOBALS{
     extern const int CHUNK_HEIGHT;
     extern const int CHUNK_DEPTH;
 
-    extern float CAMERA_X;
-    extern float CAMERA_Y;
+    extern IVector3 CAMERA;
+    extern const int WINDOW_WIDTH;
+    extern const int WINDOW_HEIGHT;
 }
 
 #endif

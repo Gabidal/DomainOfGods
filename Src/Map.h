@@ -16,7 +16,7 @@ namespace MAP{
         // Chunk coordination if an single tile represents a whole chunk.
         // HIGH coordination for detailed chunk mapping inside other tiles. 
         Location Position;
-        void* Sprite;
+        int ID = 0;
 
         vector<Tile*> Content;
 
@@ -24,14 +24,16 @@ namespace MAP{
         Tile(Location position);
     };
 
-    extern vector<Tile> Tiles;
+    extern unordered_map<IVector3, Tile, IVector3> Tiles;
 
     extern void Init_TerGen();
 
     extern void Init();
 
     extern void Save_Map();
-    extern void Load_Map(string file);
+    extern bool Load_Map(string file);
+
+    extern vector<Tile*> Get_Surrounding_Content(IVector3 position, int Distance = 1);
 
 }
 

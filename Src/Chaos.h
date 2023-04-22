@@ -15,6 +15,10 @@ namespace CHAOS{
     extern vector<Entity*> Get_Chunk_Content(IVector3 position);
 
     extern vector<Entity*> Get_Surrounding_Content(IVector3 position);
+    extern vector<Entity*> Get_Surrounding_Content(IVector3 position, int Distance);
+
+    extern vector<IVector3> Get_Surrounding_Positions(IVector3 center, int Reach = 1);
+    extern vector<Entity*> Get_Surrounding_Content(IVector3 position);
 }
 
 #endif

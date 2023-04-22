@@ -1,53 +1,72 @@
 #include "Render.h"
+#include "../Dependencies/raylib.h"
+#include "../Src/Entity.h"
 
+// Get the terrain from MAP.h
 #include "../Src/Map.h"
 #include "../Src/Globals.h"
 
-using namespace GGUI;
+// Get the Entities from Chaos.h
+#include "../Src/Chaos.h"
 
-void Init_Render(){
-    GGUI::GGUI([&](){
-        Terminal_Canvas* Map = new Terminal_Canvas(
-            GGUI::Main->Get_Width(),
-            GGUI::Main->Get_Height(),
-            {0, 0}
-        );
+#include <unordered_map>
 
-        Map->Set_Background_Color(GGUI::COLOR::WHITE);
+using namespace std;
 
-        Main->Add_Child(Map);
-    });
-}
+namespace RENDER{
+    unordered_map<int, Texture2D> Tile_Textures;
 
-UTF Render(Entity* e){
-    return UTF(
-        Entity_Type[e->Get_Type()],
-        {
-            Rank_Color[e->Get_Rank()],
-            Class_Color[e->Get_Class()]
-        }
-    );
-}
+    void Init(){
+        // Do some environment vibe cheks.
 
-void Render_Tick(){
-    Terminal_Canvas* Canvas_Handle = GGUI::Main->Get_Elements<Terminal_Canvas>()[0];
+        InitWindow(GLOBALS::WINDOW_HEIGHT, GLOBALS::WINDOW_WIDTH, "Domain Of Gods");
 
-    int Start_Y = GLOBALS::CAMERA_Y - (GLOBALS::RENDER_DISTANCE_HEIGHT / 2);
-    int Start_X = GLOBALS::CAMERA_X - (GLOBALS::RENDER_DISTANCE_WIDTH / 2);
+        Tile_Textures = {
+            {0, LoadTexture("Img/Grass.png")},       // Normal grass
+            {1, LoadTexture("Img/Wet_Grass.png")},   // Wet grass
+            {2, LoadTexture("Img/Swamp_Grass.png")}  // Swamp grass
+        };
 
-    int End_Y = GLOBALS::CAMERA_Y + (GLOBALS::RENDER_DISTANCE_HEIGHT / 2);
-    int End_X = GLOBALS::CAMERA_X + (GLOBALS::RENDER_DISTANCE_WIDTH / 2);
-
-    for (int y = Start_Y; y < End_Y; y++){
-        for (int x = Start_X; x < End_X; x++){
-            // Entity* Current_Entity = MAP::Entities[x + y * GLOBALS::RENDER_DISTANCE_WIDTH];
-
-            // if (Current_Entity != nullptr){
-            //     if (x < Canvas_Handle->Get_Width() && y < Canvas_Handle->Get_Height())
-            //         Canvas_Handle->Set(x, y, Render(Current_Entity), false);
-            // }
-        }
+        GLOBALS::CAMERA.Y = GLOBALS::CHUNK_HEIGHT / 2;
+        GLOBALS::CAMERA.X = GLOBALS::CHUNK_WIDTH / 2;
     }
 
-    Canvas_Handle->Flush();
+    void Close(){
+        // end all
+
+        CloseWindow();
+    }
+
+    void Update_Frame(){
+        if (WindowShouldClose()){
+            Close();
+            return;
+        }
+
+        BeginDrawing(); 
+        ClearBackground(BLACK);
+
+        // First draw the background with tilesseses-
+        for (auto* tile : MAP::Get_Surrounding_Content(GLOBALS::CAMERA, 5)){
+            int Tile_Width = Tile_Textures[tile->ID].width;
+            int Tile_Height = Tile_Textures[tile->ID].height;
+
+            int Tile_Position_Y = tile->Position.HIGH.Y * Tile_Height;
+            int Tile_Position_X = tile->Position.HIGH.X * Tile_Width;
+
+            int Chunk_Position_Y = tile->Position.CHUNK.Y * GLOBALS::CHUNK_HEIGHT * Tile_Height;
+            int Chunk_Position_X = tile->Position.CHUNK.X * GLOBALS::CHUNK_WIDTH * Tile_Width;
+
+            int Camera_Position_Y = GLOBALS::CAMERA.Y * GLOBALS::CHUNK_HEIGHT * Tile_Height;
+            int Camera_Position_X = GLOBALS::CAMERA.X * GLOBALS::CHUNK_WIDTH * Tile_Width;
+
+            int Relative_Y = Tile_Position_Y + Chunk_Position_Y - Camera_Position_Y;
+            int Relative_X = Tile_Position_X + Chunk_Position_X - Camera_Position_X;
+
+            DrawTexture(Tile_Textures[tile->ID], Relative_X, Relative_Y, WHITE);
+        }
+
+        EndDrawing();
+    }
 }
+

@@ -1601,8 +1601,8 @@ public:
     class Entity* Target;
     class Entity* Skill;    // this contains a weapon of choice or an skill.
 
-    Fight(class Entity* target);
-    Fight(ENTITY_TYPE type_to_fight);
+    Fight(class Entity* target) : Target(target) { Type = TASK_TYPES::FIGHT; }
+    Fight(ENTITY_TYPE type_to_fight) { Type = TASK_TYPES::FIGHT; }
 
     // after killed the enemy initiate Looting task.
     void Do() override;

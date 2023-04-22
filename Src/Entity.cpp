@@ -359,8 +359,13 @@ void Task_Base::Do(){
 
 }
 
+void Fight::Do(){
+    
+}
 
+void Find::Do(){
 
+}
 
 // the consume do function
 void Consume::Do(){
@@ -423,6 +428,10 @@ void Consume::Do(){
     }
 }
 
+void Loot::Do(){
+
+}
+
 void Condition::Do(){
     if (Condition_Func())
         Limb->Body->Parent_Entity->Add_Task(True);
@@ -434,7 +443,7 @@ void Condition::Do(){
 
 // mundane tasks will usually contain tasks like: eating, drinking, sleeping, adventuring
 void Entity::Stack_Mundane_Tasks(Body_Part* brain){
-
+    // Analyze the situation that the current entity is in, and try to make the best course of actions as tasks
 
 
 }

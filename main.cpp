@@ -6,18 +6,23 @@
 
 #include "UI/Render.h"
 
+#include "Dependencies/raylib.h"
+
 using namespace std;
 
-int main(){
+int main(){    
     GLOBALS::Init_Globals();
+
+    RENDER::Init();
 
     MAP::Init();
 
-    Init_Render();
-
-    Render_Tick();
+    RENDER::Update_Frame();
 
     _sleep(INT32_MAX);
+    
+    RENDER::Close();
+    
     return 0;    
 }
 

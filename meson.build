@@ -7,9 +7,13 @@ project(
 libs = declare_dependency(
   link_args : [
     meson.current_source_dir() + '/Dependencies/TerGen.a',
-    meson.current_source_dir() + '/Dependencies/GGUI.lib' 
+    meson.current_source_dir() + '/Dependencies/GGUI.lib',
+    meson.current_source_dir() + '/Dependencies/libraylib.a'
   ]
 )
+
+cpp = meson.get_compiler('cpp')
+win = cpp.find_library('Winmm', required: true)
 
 # Source files:
 src = files(
@@ -27,5 +31,5 @@ src = files(
 executable(
   'DomainOfGods',
   src,
-  dependencies : [libs],
+  dependencies : [libs, win],
 )
