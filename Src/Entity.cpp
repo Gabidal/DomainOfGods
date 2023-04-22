@@ -221,17 +221,18 @@ vector<Entity*> Lot_Items(Body_Part* limb, Location position){
     return Result;
 }
 
-Body_Part Lot_Body_Part(Specie_Descriptor* specie, BODY_PART_TYPES type = BODY_PART_TYPES::UNKNOWN){
-    Body_Part Result;
+Body_Part* Lot_Body_Part(Specie_Descriptor* specie, BODY_PART_TYPES type = BODY_PART_TYPES::UNKNOWN){
+    Body_Part* Result = new Body_Part();
+    Result->Body = specie;
 
-    Result.Flat_Stats = Lot_Flat_Attributes(specie, Result);
+    Result->Flat_Stats = Lot_Flat_Attributes(specie, *Result);
 
     if (type == BODY_PART_TYPES::UNKNOWN)
-        Result.Type = (BODY_PART_TYPES)Int_Range((int)BODY_PART_TYPES::UNKNOWN, (int)BODY_PART_TYPES::END);
+        Result->Type = (BODY_PART_TYPES)Int_Range((int)BODY_PART_TYPES::UNKNOWN, (int)BODY_PART_TYPES::END);
     else
-        Result.Type = type;
+        Result->Type = type;
 
-    Result.Priorities = {
+    Result->Priorities = {
         ATTRIBUTE_TYPES::HEALTH,
         ATTRIBUTE_TYPES::MANA,
         ATTRIBUTE_TYPES::HUNGER,
@@ -245,10 +246,11 @@ ENTITY_TYPE Lot_Entity_Type(){
     return (ENTITY_TYPE)Int_Range((int)ENTITY_TYPE::UNKNOWN, (int)ENTITY_TYPE::END);
 }
 
-Specie_Descriptor::Specie_Descriptor(Location position){
+Specie_Descriptor::Specie_Descriptor(Location position, Entity* parent){
     Specie = Lot_Specie_Type(position);
     Name = SPECIES_Names[(int)Specie];
     Rank = Lot_Rank(position);
+    Parent_Entity = parent;
 
     // These are the quarantined chances of some limbs:
     // Head: 100%
@@ -256,14 +258,25 @@ Specie_Descriptor::Specie_Descriptor(Location position){
     // 2x HANDS: 100%
     // 2x LEGS: 100%
 
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::HEAD)));
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::TORSO)));
+    Body_Parts.push_back(Lot_Body_Part(this, BODY_PART_TYPES::HEAD));
+    Body_Parts.push_back(Lot_Body_Part(this, BODY_PART_TYPES::TORSO));
 
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::HAND)));
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::HAND)));
+    Body_Parts.push_back(Lot_Body_Part(this, BODY_PART_TYPES::HAND));
+    Body_Parts.push_back(Lot_Body_Part(this, BODY_PART_TYPES::HAND));
 
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::LEG)));
-    Body_Parts.push_back(new Body_Part(Lot_Body_Part(this, BODY_PART_TYPES::LEG)));
+    Body_Parts.push_back(Lot_Body_Part(this, BODY_PART_TYPES::LEG));
+    Body_Parts.push_back(Lot_Body_Part(this, BODY_PART_TYPES::LEG));
+}
+
+
+float Specie_Descriptor::Get(ATTRIBUTE_TYPES Global_Attribute){
+    float Result = 0.f;
+
+    for (auto* limb : Body_Parts){
+        Result += limb->Get(Global_Attribute);
+    }
+
+    return Result;
 }
 
 Entity::Entity(Location position) : Entity(position, Lot_Entity_Type()){}
@@ -275,7 +288,7 @@ Entity::Entity(Location location, ENTITY_TYPE type){
     Class = Lot_Class(location);
 
     if (Type == ENTITY_TYPE::ENTITY){
-        Specie = Specie_Descriptor(location);
+        Specie = Specie_Descriptor(location, this);
 
         // lot the talents for now and let the entity decide later on.
         for (int i = 0; i < Int_Range(0, (int)Specie.Rank); i++){
@@ -359,7 +372,7 @@ float Entity::Get_Distance(Entity* other){
 
 // The default do
 void Task_Base::Do(){
-
+    Is_Done = true;
 }
 
 void Fight::Do(){
@@ -367,7 +380,64 @@ void Fight::Do(){
 }
 
 void Find::Do(){
+    FVector3 Difference;
 
+    if (Target_Type != ENTITY_TYPE::UNKNOWN){
+        vector<Entity*> Close_By_Entities = CHAOS::Get_Surrounding_Content(Limb->Body->Parent_Entity->Get_Position().CHUNK);
+
+        float Previous_Target_Distance = INT16_MAX;
+
+        for (auto ent : Close_By_Entities){
+            if (ent->Get_Type() == Target_Type){
+                float Chunk_Distance = sqrt(
+                    pow(ent->Get_Position().CHUNK.X - Limb->Body->Parent_Entity->Get_Position().CHUNK.X, 2) +
+                    pow(ent->Get_Position().CHUNK.Y - Limb->Body->Parent_Entity->Get_Position().CHUNK.Y, 2) +
+                    pow(ent->Get_Position().CHUNK.Z - Limb->Body->Parent_Entity->Get_Position().CHUNK.Z, 2)
+                );
+
+                if (Chunk_Distance < Previous_Target_Distance){
+                    Target_Position.CHUNK = ent->Get_Position().CHUNK;
+                    Target_Position.HIGH = ent->Get_Position().HIGH;
+                    Previous_Target_Distance = Chunk_Distance;
+                }
+            }
+        }
+
+        // To disable for the next tick() to not need to calculate all these agane.
+        if (Previous_Target_Distance != INT16_MAX)
+            Target_Type = ENTITY_TYPE::UNKNOWN;
+    }
+
+    // calculate the difference vector and normalize * speed scaler.
+    Difference = Target_Position.HIGH - Limb->Body->Parent_Entity->Get_Position().HIGH;
+        
+
+    // normalize the diff vector.
+    float mag = sqrt(Difference.X * Difference.X + Difference.Y * Difference.Y + Difference.Z * Difference.Z);
+    Difference.X /= mag;
+    Difference.Y /= mag;
+    Difference.Z /= mag;
+
+    // now check if we are close enough to the target, if so then stop moving.
+    if (mag <= 1.f){
+        Is_Done = true;
+        return;
+    }
+
+    // now move the entity.
+    Limb->Body->Parent_Entity->Move_To(Difference * Limb->Get(ATTRIBUTE_TYPES::SPEED));
+}
+
+
+void Entity::Move_To(FVector3 New_Location){
+    // the speed difference is also stored for velocity calculation into the effect->Speed section.
+    float Magnitude = sqrt(New_Location.X * New_Location.X + New_Location.Y * New_Location.Y + New_Location.Z * New_Location.Z);
+
+    float Max_Velocity = Specie.Get(ATTRIBUTE_TYPES::SPEED);
+
+    Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] = min(Max_Velocity, Current_Effects.Get(ATTRIBUTE_TYPES::VELOCITY) + Magnitude);
+
+    Position.HIGH += New_Location * Current_Effects.Get(ATTRIBUTE_TYPES::VELOCITY);
 }
 
 // the consume do function
@@ -406,13 +476,8 @@ void Consume::Do(){
     // there were no consumables, find one.
     if (!Found_Any_Usable_Consumables){
         vector<Entity*> Close_By_Entities = CHAOS::Get_Surrounding_Content(Limb->Body->Parent_Entity->Get_Position().CHUNK);
-        
-        // Priorities to try to find the consumable.
-        // this makes the entity to try to ask/loot other entities, if none of the above will satisfy the needs, then act with fists.
-        for (auto* ent : Close_By_Entities){
-            Limb->Body->Parent_Entity->Add_Task(new Loot(ent, {{{Lacking_Attribute, 1.f}}}));
-        }
 
+        // Even if this is added first it is the last thing to do in the task chain.
         Limb->Body->Parent_Entity->Add_Task(
             new Condition(
                 [&](){ 
@@ -428,6 +493,12 @@ void Consume::Do(){
                 nullptr
             )
         );
+
+        // Priorities to try to find the consumable.
+        // this makes the entity to try to ask/loot other entities, if none of the above will satisfy the needs, then act with fists.
+        for (auto* ent : Close_By_Entities){
+            Limb->Body->Parent_Entity->Add_Task(new Loot(ent, {{{Lacking_Attribute, 1.f}}}));
+        }
     }
 }
 
@@ -445,10 +516,24 @@ void Condition::Do(){
 // END OF TASK SPACE
 
 // mundane tasks will usually contain tasks like: eating, drinking, sleeping, adventuring
+// Analyze the situation that the current entity is in, and try to make the best course of actions as tasks
 void Entity::Stack_Mundane_Tasks(Body_Part* brain){
-    // Analyze the situation that the current entity is in, and try to make the best course of actions as tasks
+    // If there are already tasks finish them, this is for mundane tasks not competing with the critical tasks.
+    if (Tasks.size() != 0)
+        return;
 
+    int Chosen_Task = Int_Range(0, 1);
 
+    // Wander
+    if (Chosen_Task == 0){
+        Location Current_Location = Get_Position();
+
+        // add some random offsets for the entity to wander of to.
+        Current_Location.HIGH += {Float_Range(-10.f, 10.f), Float_Range(-10.f, 10.f), 0};
+        Current_Location.CHUNK += {Int_Range(-10, 10), Int_Range(-10, 10), 0};
+
+        Tasks.push_back(new Find(Current_Location, TASK_TYPES::UNKNOWN, brain));
+    }
 }
 
 // Critical tasks are if HEALTH is near zero
@@ -462,6 +547,15 @@ void Entity::Stack_Critical_Tasks(Body_Part* brain){
 
 }
 
+void Entity::Process_Tasks(Body_Part* brain){
+    if (Tasks.size() == 0)
+        return;
+
+    Task_Base* Current_Task = Tasks.back(); 
+
+    Current_Task->Do();
+}
+
 void Entity::AI(Body_Part* brain){
 
     // Randomize the priorities if the entity is high af.
@@ -473,10 +567,14 @@ void Entity::AI(Body_Part* brain){
 
     }
 
+    // Delete Done tasks and re-order the tasks that are left.
+    Re_Order_Tasks();
+
+    // Process the tasks.
+    Process_Tasks(brain);
     
     Stack_Mundane_Tasks(brain);
     Stack_Critical_Tasks(brain);
-    Re_Order_Tasks();
 }
 
 void Entity::Calculate_Passives(){
@@ -554,6 +652,27 @@ void Entity::Tick(){
     for (auto* limb : Specie.Body_Parts)
         if (limb->Type == BODY_PART_TYPES::HEAD)
             AI(limb);
+
+    Physics();
+}
+
+float Get_Drag_Force(Entity* e){
+    float Drag_Coefficient, Drag_Force, Fluid_Density, Reference_Area, Flow_Speed = 0.f;
+
+    Reference_Area = e->Get_Specie()->Get(ATTRIBUTE_TYPES::SIZE);
+
+    Fluid_Density = 1.225f;
+    Flow_Speed = e->Get_Attribute(ATTRIBUTE_TYPES::VELOCITY);
+
+    Drag_Coefficient = 1.6f;
+    Drag_Force = 0.5f * Fluid_Density * Reference_Area * Flow_Speed * Flow_Speed * Drag_Coefficient;
+
+    return Drag_Force;
+}
+
+void Entity::Physics(){
+    // Decrease Velocity
+    Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] -= Get_Drag_Force(this) / Specie.Get(ATTRIBUTE_TYPES::SIZE);
 }
 
 string Describe_Attribute_As_Adjective(bool is_positive){

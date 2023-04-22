@@ -597,6 +597,7 @@ enum class ATTRIBUTE_TYPES{
     AGILITY,              // 10% to get,      "crippled" | "athletic"
     // speed is for movement speed, whereas agility is the aerobatics in a fight.
     SPEED,                  // 10% to get,     "slow" | "fast", "teleporting"
+    VELOCITY,
 
     // Mentals
     INTELLIGENCE,         // 10% to get,      "stupid" | "wise"
@@ -634,6 +635,7 @@ const unordered_map<ATTRIBUTE_TYPES, pair<vector<const char*>, vector<const char
 
     {ATTRIBUTE_TYPES::AGILITY, {{"crippled"}, {"athletic"}}},
     {ATTRIBUTE_TYPES::SPEED, {{"slow"}, {"fast", "teleporting"}}},
+    {ATTRIBUTE_TYPES::VELOCITY, {{"slow"}, {"fast", "teleporting"}}},
 
     {ATTRIBUTE_TYPES::INTELLIGENCE, {{"stupid"}, {"wise"}}},
     {ATTRIBUTE_TYPES::MANA, {{}, {"arcane", "magical"}}},
@@ -665,6 +667,7 @@ const double ATTRIBUTE_Probabilities[] = {
 
     0.1,    // AGILITY
     0.1,    // SPEED
+    0.1,    // VELOCITY
 
     0.1,    // INTELLIGENCE
     0.1,    // MANA
@@ -700,6 +703,7 @@ const vector<const char*> ATTRIBUTE_Names[] = {
 
     {"agility"}, // AGILITY
     {"speed"}, // SPEED
+    {"velocity"}, // VELOCITY
 
     {"intelligence"}, // INTELLIGENCE
     {"mana", "magic"}, // MANA
@@ -1056,6 +1060,7 @@ enum class SPECIES{
     GOBLIN,        // 25% to get
     HUMAN,         // 25% to get
 
+    UNKNOWN,
     END,
 };
 
@@ -1543,16 +1548,18 @@ class Specie_Descriptor{
 public:
     string Name = "";
 
-    SPECIES Specie;
-    RANK Rank;
+    SPECIES Specie = SPECIES::UNKNOWN;
+    RANK Rank = RANK::NONE;
     
     // Theses are pointer since when a limb is cut of it stays and someone other can pick it up.
     vector<Body_Part*> Body_Parts; 
 
-    class Entity* Parent_Entity;
+    class Entity* Parent_Entity = nullptr;
 
     Specie_Descriptor() = default;
-    Specie_Descriptor(Location position);
+    Specie_Descriptor(Location position, class Entity* parent);
+
+    float Get(ATTRIBUTE_TYPES Global_Attribute);
 };
 
 class Behaviour{
@@ -1623,13 +1630,13 @@ public:
 
 class Find : public Task_Base{
 public:
-    Location Target_Position;
-    ENTITY_TYPE Target_Type;
+    Location Target_Position = {{0, 0, 0}, {0, 0, 0}};
+    ENTITY_TYPE Target_Type = ENTITY_TYPE::UNKNOWN;
 
     TASK_TYPES Prefer_Action_After_Find;
 
-    Find(Location target, TASK_TYPES prefer_action_after_find) : Target_Position(target), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND;  }
-    Find(ENTITY_TYPE type, TASK_TYPES prefer_action_after_find) : Target_Type(type), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND;  }
+    Find(Location target, TASK_TYPES prefer_action_after_find, Body_Part* limb) : Target_Position(target), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND; Limb = limb;  }
+    Find(ENTITY_TYPE type, TASK_TYPES prefer_action_after_find, Body_Part* limb) : Target_Type(type), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND; Limb = limb; }
 
     void Do() override;
 };
@@ -1696,10 +1703,12 @@ public:
 
     void Tick();
     void AI(Body_Part* brain);
+    void Physics();
     
     // State Analyzers
     void Stack_Mundane_Tasks(Body_Part* brain);
     void Stack_Critical_Tasks(Body_Part* brain);
+    void Process_Tasks(Body_Part* brain);
 
     // Passives
     void Calculate_Passives();
@@ -1718,6 +1727,8 @@ public:
     inline Task_Base* Get_Next_Task();
     inline void Add_Task(Task_Base* task) { Tasks.push_back(task); }
     inline Specie_Descriptor* Get_Specie() { return &Specie; }
+    
+    inline void Move_To(FVector3 Position);
 
     inline void Update_Attribute(ATTRIBUTE_TYPES type, float new_value) { Current_Effects.Attributes[type] = new_value; }
 
