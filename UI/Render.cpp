@@ -9,6 +9,7 @@
 // Get the Entities from Chaos.h
 #include "../Src/Chaos.h"
 
+#include <iostream>
 #include <unordered_map>
 
 using namespace std;
@@ -29,10 +30,8 @@ namespace RENDER{
         };
 
         Entity_Textures = {
-            {SPECIES::HUMAN, LoadTexture("Img/Entity/Human.png")},
-            {SPECIES::GOBLIN, LoadTexture("Img/Entity/Goblin.png")},
-            {SPECIES::ELF, LoadTexture("Img/Entity/Elf.png")},
-
+            {SPECIES::MECHANITE, LoadTexture("Img/Entity/IceGolemMarkII.png")},
+            {SPECIES::HUMAN, LoadTexture("Img/Entity/SandGolemMarkII.png")},
         };
 
         GLOBALS::CAMERA.Y = GLOBALS::CHUNK_HEIGHT / 2;
@@ -83,6 +82,9 @@ namespace RENDER{
         // now draw the entities
         for (auto* entity : CHAOS::Get_Surrounding_Content(GLOBALS::CAMERA, 5)){
             FVector3 World_Space = Get_Relative_Position_To_Camera(entity->Get_Position(), Entity_Textures[entity->Get_Specie()->Specie]);
+
+            if (Entity_Textures.find(entity->Get_Specie()->Specie) != Entity_Textures.end())
+                cout << "ERROR: No Texture for '" + SPECIES_Names[(int)entity->Get_Specie()->Specie] + "' found!" << endl;
 
             // Use directional mappings.
             DrawTexture(Entity_Textures[entity->Get_Specie()->Specie], World_Space.X, World_Space.Y, WHITE);

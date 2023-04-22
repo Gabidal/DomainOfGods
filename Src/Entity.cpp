@@ -7,9 +7,12 @@
 #include <cmath>
 
 void Location::Update_Chunk_Location(){
-    IVector3 chunk_size = {GLOBALS::CHUNK_WIDTH, GLOBALS::CHUNK_HEIGHT, GLOBALS::CHUNK_DEPTH};
+    FVector3 chunk_size = {GLOBALS::CHUNK_WIDTH, GLOBALS::CHUNK_HEIGHT, GLOBALS::CHUNK_DEPTH};
 
-    CHUNK += HIGH % chunk_size;
+    FVector3 tmp = HIGH / chunk_size;
+
+    CHUNK += IVector3(tmp.X, tmp.Y, tmp.Z);
+    HIGH = HIGH % chunk_size;
 }
 
 template<typename T>

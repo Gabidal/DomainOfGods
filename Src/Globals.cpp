@@ -34,7 +34,5 @@ namespace GLOBALS{
 
     const int WINDOW_WIDTH = 1080;
     const int WINDOW_HEIGHT = 1920;
-
-
 }
 

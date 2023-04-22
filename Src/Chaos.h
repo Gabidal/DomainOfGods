@@ -19,6 +19,9 @@ namespace CHAOS{
 
     extern vector<IVector3> Get_Surrounding_Positions(IVector3 center, int Reach = 1);
     extern vector<Entity*> Get_Surrounding_Content(IVector3 position);
+
+    extern void Init();
+    extern void Tick();
 }
 
 #endif

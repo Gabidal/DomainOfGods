@@ -165,7 +165,7 @@ public:
     }
 
     IVector3 operator%(const IVector3& vec){
-        return IVector3(fmod(X, vec.X), fmod(Y, vec.Y), fmod(Z, vec.Z));
+        return IVector3((int)X % vec.X, (int)Y % vec.Y, (int)Z % vec.Z);
     }
 
     FVector3 operator+(const IVector3& vec){

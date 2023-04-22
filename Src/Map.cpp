@@ -24,7 +24,7 @@ namespace MAP{
         ID = 0;
     }
 
-    int Normalize_Elevation(float Y) {
+    int Normalize_Tile_Elevation(float Y) {
         int Normalized_Y = (abs(Y) * (int)RENDER::Tile_Textures.size());
 
         int Offset_Y = (Normalized_Y % (int)RENDER::Tile_Textures.size());
@@ -89,7 +89,7 @@ namespace MAP{
                     float Elevation = TerGen::Warp_Noise({Global_X, Global_Y}, Terrain_Generator);
 
                     // get the texture from the generator
-                    int Texture = Normalize_Elevation(Elevation);
+                    int Texture = Normalize_Tile_Elevation(Elevation);
 
                     // set the texture
                     Current_Tile->ID = Texture;

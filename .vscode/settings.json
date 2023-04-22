@@ -67,7 +67,8 @@
         "xloctime": "cpp",
         "xstddef": "cpp",
         "xtree": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "random": "cpp"
     },
     "cSpell.words": [
         "EQUIPABLE",

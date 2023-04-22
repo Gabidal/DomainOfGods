@@ -3,6 +3,7 @@
 #include "Src/Entity.h"
 #include "Src/Globals.h"
 #include "Src/Map.h"
+#include "Src/Chaos.h"
 
 #include "UI/Render.h"
 
@@ -14,10 +15,16 @@ int main(){
     GLOBALS::Init_Globals();
 
     RENDER::Init();
+    CHAOS::Init();
 
     MAP::Init();
 
-    RENDER::Update_Frame();
+    while(true){
+
+        RENDER::Update_Frame();
+        CHAOS::Tick();
+
+    }
 
     _sleep(INT32_MAX);
     

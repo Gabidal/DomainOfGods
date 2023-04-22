@@ -1,30 +1,76 @@
 #include "Chaos.h"
+#include "../Dependencies/TerGen.h"
+#include "../UI/Render.h"
+#include "Globals.h"
 
 namespace CHAOS{
 
-    unordered_map<IVector3, Entity, IVector3> Entity_Chunks;
+    inline unordered_map<IVector3, Entity, IVector3> Entity_Chunks;
+    inline TerGen::Generator* Entity_Generator;
+
+    void Init(){
+        Entity_Generator = new TerGen::Generator();
+
+
+    }
+
+    int Normalize_Entity_Elevation(float Y) {
+        int Normalized_Y = (abs(Y) * (int)RENDER::Entity_Textures.size());
+
+        int Offset_Y = (Normalized_Y % (int)RENDER::Entity_Textures.size());
+
+        return Offset_Y;
+    }
 
     vector<Entity*> Get_Chunk_Content(IVector3 position){
+        if (Entity_Chunks.find(position) != Entity_Chunks.end())
+            return Entity_Chunks[position].Get_Holding();
+
+        Entity New_Wrapper;
+
+        for (int Y = 0; Y < GLOBALS::CHUNK_HEIGHT; Y++){
+            for (int X = 0; X < GLOBALS::CHUNK_WIDTH; X++){
+                TerGen::Vector2 World_Position = {
+                    (position.X * GLOBALS::CHUNK_WIDTH) + X,
+                    (position.Y * GLOBALS::CHUNK_HEIGHT) + Y
+                };
+
+                double Value = TerGen::Warp_Noise(World_Position, Entity_Generator);
+
+                if (Value <= GLOBALS::ENTITY_DENSITY)
+                    continue;
+
+                New_Wrapper.Add_Holding(new Entity({{X, Y, 1}, position}, ENTITY_TYPE::ENTITY));
+            }
+        }
+
+        Entity_Chunks[position] = New_Wrapper;
+
         return Entity_Chunks[position].Get_Holding();
     }
 
     // Goes through all the chunks and checks if some entity needs to be moved into another chunk.
     void Tick(){
         for (auto& Chunk : Entity_Chunks){
-            for (auto& entity : Chunk.second.Get_Holding()){
+            vector<Entity *>& Content = Chunk.second.Get_Holding();
+            for (int i = 0; i < Content.size(); i++){
                 IVector3 Chunk_Coordinates;
 
+                // Update AI
+                Content[i]->Tick();
+            
                 // update the entity CHUNK coordinates
-                Location Current_Entity_Position = entity->Get_Position();
+                Location Current_Entity_Position = Content[i]->Get_Position();
 
                 Current_Entity_Position.Update_Chunk_Location();
 
+
                 // check if the newly updated chunks coordinates match the map key, if not put em into a new chunk
                 if (!(Current_Entity_Position.CHUNK == Chunk.first)){
-                    Entity_Chunks[Current_Entity_Position.CHUNK].Add_Holding(entity);
+                    Entity_Chunks[Current_Entity_Position.CHUNK].Add_Holding(Content[i]);
 
                     // remove the entity from the old lost now
-                    Chunk.second.Remove_Holding(entity);
+                    Chunk.second.Remove_Holding(Content[i--]);
                 }
             }
         }
@@ -35,9 +81,7 @@ namespace CHAOS{
 
         for (int y = -Reach; y <= Reach; y++){
             for (int x = -Reach; x <= Reach; x++){
-                for (int z = -Reach; z <= Reach; z++){
-                    Result.push_back(IVector3(center.X + x, center.Y + y, center.Z + z));
-                }
+                Result.push_back(IVector3(center.X + x, center.Y + y, 0));
             }
         }
 
