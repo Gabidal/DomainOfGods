@@ -45,6 +45,7 @@ public:
     }
 
     size_t operator()(const IVector3& key) const{
+        (void)key;
         return (*this)();
     }
 
@@ -725,6 +726,9 @@ public:
     unordered_map<ATTRIBUTE_TYPES, float> Attributes;
 
     ATTRIBUTES() = default;
+    ATTRIBUTES(const ATTRIBUTES&) = default;
+    
+
     ATTRIBUTES(ATTRIBUTE_TYPES type, float value){
         Attributes[type] = value;
     }
@@ -1601,15 +1605,19 @@ public:
     Task_Base() = default;
 
     virtual void Do();  // for UNKNOWN
+    virtual ~Task_Base() = default;
 };
 
 class Fight : public Task_Base{
 public:
+
     class Entity* Target;
+    ENTITY_TYPE Target_Type = ENTITY_TYPE::UNKNOWN;
+
     class Entity* Skill;    // this contains a weapon of choice or an skill.
 
     Fight(class Entity* target) : Target(target) { Type = TASK_TYPES::FIGHT; }
-    Fight(ENTITY_TYPE type_to_fight) { Type = TASK_TYPES::FIGHT; }
+    Fight(ENTITY_TYPE type_to_fight) { Type = TASK_TYPES::FIGHT; Target_Type = type_to_fight; }
 
     // after killed the enemy initiate Looting task.
     void Do() override;
@@ -1652,11 +1660,11 @@ public:
 
 class Condition : public Task_Base{
 public:
-    Task_Base* True = nullptr;
-    Task_Base* False = nullptr;
-
     function<bool()> Condition_Func;
 
+    Task_Base* True = nullptr;
+    Task_Base* False = nullptr;
+ 
     Condition(function<bool()> condition_func, Task_Base* true_task, Task_Base* false_task) : Condition_Func(condition_func), True(true_task), False(false_task) { Type = TASK_TYPES::CONDITION; }
 
     void Do() override;
@@ -1671,8 +1679,9 @@ protected:
     CLASS Class;
     vector<ROLE> Roles;
     vector<ROLE> Talent;    // if the role is pointing to same type as the talent the entity gets an bonus output.
-    Specie_Descriptor Specie;
+    Specie_Descriptor* Specie;
     vector<Task_Base*> Tasks;
+    FVector3 Direction = {0, 0, 0};
 
     // The current state vectors, this includes:
     // - Bleed
@@ -1710,25 +1719,28 @@ public:
     void Stack_Critical_Tasks(Body_Part* brain);
     void Process_Tasks(Body_Part* brain);
 
+    void Analyze_State_With_Bias(TASK_TYPES bias);
+
     // Passives
     void Calculate_Passives();
     void Calculate_Effects();
     void Passive_Heal_With(ATTRIBUTE_TYPES replenisher);
     void Re_Order_Tasks();
     
-    inline RANK Get_Rank(){ return Specie.Rank; }
+    inline RANK Get_Rank(){ return Specie->Rank; }
     inline CLASS Get_Class(){ return Class; }
     inline Location Get_Position() { return Position; }
     inline string Get_Name() { return Info.Name; }
     inline ENTITY_TYPE Get_Type() { return Type; }
-    inline float Get_Attribute(ATTRIBUTE_TYPES attr) { Current_Effects.Get(attr); }
+    inline float Get_Attribute(ATTRIBUTE_TYPES attr) { return Current_Effects.Get(attr); }
     inline vector<Entity*>& Get_Holding() { return Inventory; }
     inline float Get_Power_Level();
     inline Task_Base* Get_Next_Task();
     inline void Add_Task(Task_Base* task) { Tasks.push_back(task); }
-    inline Specie_Descriptor* Get_Specie() { return &Specie; }
+    inline Specie_Descriptor* Get_Specie() { return Specie; }
     
-    inline void Move_To(FVector3 Position);
+    inline void Accelerate_To(FVector3 Position, float acceleration);
+    inline void Break_Speed();
 
     inline void Update_Attribute(ATTRIBUTE_TYPES type, float new_value) { Current_Effects.Attributes[type] = new_value; }
 

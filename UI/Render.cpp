@@ -83,8 +83,8 @@ namespace RENDER{
         for (auto* entity : CHAOS::Get_Surrounding_Content(GLOBALS::CAMERA, 5)){
             FVector3 World_Space = Get_Relative_Position_To_Camera(entity->Get_Position(), Entity_Textures[entity->Get_Specie()->Specie]);
 
-            if (Entity_Textures.find(entity->Get_Specie()->Specie) != Entity_Textures.end())
-                cout << "ERROR: No Texture for '" + SPECIES_Names[(int)entity->Get_Specie()->Specie] + "' found!" << endl;
+            // if (Entity_Textures.find(entity->Get_Specie()->Specie) != Entity_Textures.end())
+            //     cout << "ERROR: No Texture for '" + SPECIES_Names[(int)entity->Get_Specie()->Specie] + "' found!" << endl;
 
             // Use directional mappings.
             DrawTexture(Entity_Textures[entity->Get_Specie()->Specie], World_Space.X, World_Space.Y, WHITE);

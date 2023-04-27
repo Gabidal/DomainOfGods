@@ -29,6 +29,10 @@ namespace GLOBALS{
     extern IVector3 CAMERA;
     extern const int WINDOW_WIDTH;
     extern const int WINDOW_HEIGHT;
+
+    extern const float TICK_LENGTH;
+    extern const float SECOND;
+    extern const float TICK_DELTA;
 }
 
 #endif

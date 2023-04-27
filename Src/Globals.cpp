@@ -34,5 +34,10 @@ namespace GLOBALS{
 
     const int WINDOW_WIDTH = 1080;
     const int WINDOW_HEIGHT = 1920;
+
+    const float TICK_LENGTH = 16;     // 16ms
+    const float SECOND = 1000;        // 1000ms
+    const float TICK_DELTA = TICK_LENGTH / SECOND;
+
 }
 

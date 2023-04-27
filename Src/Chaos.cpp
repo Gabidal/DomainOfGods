@@ -5,7 +5,7 @@
 
 namespace CHAOS{
 
-    inline unordered_map<IVector3, Entity, IVector3> Entity_Chunks;
+    inline unordered_map<IVector3, vector<Entity*>, IVector3> Entity_Chunks;
     inline TerGen::Generator* Entity_Generator;
 
     void Init(){
@@ -24,9 +24,9 @@ namespace CHAOS{
 
     vector<Entity*> Get_Chunk_Content(IVector3 position){
         if (Entity_Chunks.find(position) != Entity_Chunks.end())
-            return Entity_Chunks[position].Get_Holding();
+            return Entity_Chunks[position];
 
-        Entity New_Wrapper;
+        vector<Entity*> Result;
 
         for (int Y = 0; Y < GLOBALS::CHUNK_HEIGHT; Y++){
             for (int X = 0; X < GLOBALS::CHUNK_WIDTH; X++){
@@ -37,23 +37,25 @@ namespace CHAOS{
 
                 double Value = TerGen::Warp_Noise(World_Position, Entity_Generator);
 
-                if (Value <= GLOBALS::ENTITY_DENSITY)
+                Value = abs(Value);
+
+                if (Value >= GLOBALS::ENTITY_DENSITY)
                     continue;
 
-                New_Wrapper.Add_Holding(new Entity({{X, Y, 1}, position}, ENTITY_TYPE::ENTITY));
+                Result.push_back(new Entity({{(float)X, (float)Y, 1}, position}, ENTITY_TYPE::ENTITY));
             }
         }
 
-        Entity_Chunks[position] = New_Wrapper;
+        Entity_Chunks[position] = Result;
 
-        return Entity_Chunks[position].Get_Holding();
+        return Entity_Chunks[position];
     }
 
     // Goes through all the chunks and checks if some entity needs to be moved into another chunk.
     void Tick(){
         for (auto& Chunk : Entity_Chunks){
-            vector<Entity *>& Content = Chunk.second.Get_Holding();
-            for (int i = 0; i < Content.size(); i++){
+            vector<Entity *>& Content = Chunk.second;
+            for (int i = 0; i < (int)Content.size(); i++){
                 IVector3 Chunk_Coordinates;
 
                 // Update AI
@@ -67,11 +69,20 @@ namespace CHAOS{
 
                 // check if the newly updated chunks coordinates match the map key, if not put em into a new chunk
                 if (!(Current_Entity_Position.CHUNK == Chunk.first)){
-                    Entity_Chunks[Current_Entity_Position.CHUNK].Add_Holding(Content[i]);
+                    Entity_Chunks[Current_Entity_Position.CHUNK].push_back(Content[i]);
 
                     // remove the entity from the old lost now
-                    Chunk.second.Remove_Holding(Content[i--]);
+                    Chunk.second.erase(Chunk.second.begin() + i--);
                 }
+            }
+        }
+    }
+
+    void Apply_Physics(){
+        for (auto& Chunk : Entity_Chunks){
+            vector<Entity *>& Content = Chunk.second;
+            for (int i = 0; i < (int)Content.size(); i++){
+                Content[i]->Physics();
             }
         }
     }

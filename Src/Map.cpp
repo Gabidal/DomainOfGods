@@ -60,12 +60,12 @@ namespace MAP{
         Terrain_Generator = new TerGen::Generator();
     }
 
-    void Save_Map(string file){
+    void Save_Map([[maybe_unused]] string file){
 
         
     }
 
-    bool Load_Map(string file){
+    bool Load_Map([[maybe_unused]] string file){
 
         return false;
 
@@ -79,7 +79,7 @@ namespace MAP{
             for (int Y = 0; Y < GLOBALS::CHUNK_HEIGHT; Y++){
                 for (int X = 0; X < GLOBALS::CHUNK_WIDTH; X++){
                     // get the tile from the generator
-                    Tile* Current_Tile = new Tile({{X, Y, 0}, pos});
+                    Tile* Current_Tile = new Tile({{(float)X, (float)Y, 0}, pos});
 
                     // global positions
                     int Global_Y = Y + pos.Y * GLOBALS::CHUNK_HEIGHT;

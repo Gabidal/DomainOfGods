@@ -22,6 +22,7 @@ namespace CHAOS{
 
     extern void Init();
     extern void Tick();
+    extern void Apply_Physics();
 }
 
 #endif

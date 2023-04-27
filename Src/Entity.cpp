@@ -5,9 +5,12 @@
 
 #include <math.h>
 #include <cmath>
+#include <iostream>
+
+using namespace std;
 
 void Location::Update_Chunk_Location(){
-    FVector3 chunk_size = {GLOBALS::CHUNK_WIDTH, GLOBALS::CHUNK_HEIGHT, GLOBALS::CHUNK_DEPTH};
+    FVector3 chunk_size = {(float)GLOBALS::CHUNK_WIDTH, (float)GLOBALS::CHUNK_HEIGHT, (float)GLOBALS::CHUNK_DEPTH};
 
     FVector3 tmp = HIGH / chunk_size;
 
@@ -31,9 +34,9 @@ T Get_Rarity(Location location, const double Probability_Table[]){
     double Floor = -1;
 
     TerGen::Vector3 World_Position = {
-        location.HIGH.X + location.CHUNK.X * GLOBALS::CHUNK_WIDTH,
-        location.HIGH.Y + location.CHUNK.Y * GLOBALS::CHUNK_HEIGHT,
-        location.HIGH.Z + location.CHUNK.Z * GLOBALS::CHUNK_DEPTH
+        (int)location.HIGH.X + location.CHUNK.X * GLOBALS::CHUNK_WIDTH,
+        (int)location.HIGH.Y + location.CHUNK.Y * GLOBALS::CHUNK_HEIGHT,
+        (int)location.HIGH.Z + location.CHUNK.Z * GLOBALS::CHUNK_DEPTH
     };
 
     double random = TerGen::Noise(World_Position, GLOBALS::Value_Noise); //(double)rand() / RAND_MAX;
@@ -52,6 +55,8 @@ T Get_Rarity(Location location, const double Probability_Table[]){
             break;
         }
     }
+
+    return lootClass;
 }
 
 // The location affects the rarity of the rank.
@@ -137,7 +142,7 @@ ATTRIBUTES Lot_Attribute_Scalers(Entity* e){
 ATTRIBUTES Lot_Flat_Attributes(Specie_Descriptor* specie, Body_Part& limb){
     ATTRIBUTES Result;
 
-    // First generate the pre determined attributes for the current specie.
+    // First generate the pre determined attributes for the current Specie->
     SPECIE_MINMAX MinMaxs = SPECIE_MINMAX_VALUES.at(specie->Specie);
 
     for (ATTRIBUTE_TYPES Attribute = (ATTRIBUTE_TYPES)0; (int)Attribute < (int)ATTRIBUTE_TYPES::END; Attribute = (ATTRIBUTE_TYPES)((int)Attribute + 1)){
@@ -163,21 +168,16 @@ float Body_Part::Get(ATTRIBUTE_TYPES attr){
     // The flat stat of the representing attribute.
     float Flat = Flat_Stats.Get(attr);
 
-    if (Body){
-        for (auto* limb : Body->Body_Parts){
-            for (auto* equipped : limb->Equipped){
-                if (limb != this && equipped->Get_Type() != ENTITY_TYPE::AURA)
-                    continue;
+    for (auto* limb : Body->Body_Parts){
+        for (auto* equipped : limb->Equipped){
+            if (limb != this && equipped->Get_Type() != ENTITY_TYPE::AURA)
+                continue;
 
-                Flat *= equipped->Get_Attribute(attr);
-            }
+            Flat *= equipped->Get_Attribute(attr);
         }
-    }   
-    else{
-        // This means that the limb has been cut off.
-        return Flat;
     }
 
+    return Flat;
 }
 
 float Body_Part::Get_Local_Passives(ATTRIBUTE_TYPES attr){
@@ -202,6 +202,7 @@ float Body_Part::Get_Global_Passives(ATTRIBUTE_TYPES attr){
         }
     }
 
+    return Result;
 }
 
 vector<Entity*> Lot_Items(Body_Part* limb, Location position){
@@ -288,17 +289,17 @@ Entity::Entity(Location location, ENTITY_TYPE type){
     Class = Lot_Class(location);
 
     if (Type == ENTITY_TYPE::ENTITY){
-        Specie = Specie_Descriptor(location, this);
+        Specie = new Specie_Descriptor(location, this);
 
         // lot the talents for now and let the entity decide later on.
-        for (int i = 0; i < Int_Range(0, (int)Specie.Rank); i++){
+        for (int i = 0; i < Int_Range(0, (int)Specie->Rank); i++){
             Talent.push_back(
                 Lot_Role(location)
             );
         }
 
         // Lot random items for the entity
-        for (auto* limb : Specie.Body_Parts){
+        for (auto* limb : Specie->Body_Parts){
             vector<Entity*> tmp = Lot_Items(limb, Position);
 
             // We put em here instead of the limb equip, because we want the entity to choose the right equipment based on the environment.
@@ -322,23 +323,25 @@ float Body_Part::Get_Power_Level(){
     for (auto* equipped : Equipped) Result += equipped->Get_Power_Level();
 
     for (auto& attr : Flat_Stats.Attributes) Result += attr.second; 
+
+    return Result;
 }
 
 float Entity::Get_Power_Level(){
     float Result = 0.0f;
 
     // This will make sure that only equipped items are on display when scanning for power levels.
-    for (auto* limb : Specie.Body_Parts) Result += limb->Get_Power_Level();
+    for (auto* limb : Specie->Body_Parts) Result += limb->Get_Power_Level();
 
     // The change that this brings is so tiny that only HC, players will probably use.
-    float Scaler = 1 + (1.f - SPECIES_Probabilities[(int)Specie.Specie]);
+    float Scaler = 1 + (1.f - SPECIES_Probabilities[(int)Specie->Specie]);
     Result *= Scaler;
 
     // This will only be applied to items anyway, so it wont be as an big affecter as the rank.
     Result *= max((int)Class, 1);
 
     // This is only for entities, so because we multiply it last it will also have the greatest affect. 
-    Result *= max((int)Specie.Rank, 1);
+    Result *= max((int)Specie->Rank, 1);
 
     return Result;
 }
@@ -419,25 +422,45 @@ void Find::Do(){
     Difference.Z /= mag;
 
     // now check if we are close enough to the target, if so then stop moving.
-    if (mag <= 1.f){
+    if (mag <= 0.5f){
         Is_Done = true;
+        Limb->Body->Parent_Entity->Break_Speed();
+        Limb->Body->Parent_Entity->Analyze_State_With_Bias(Prefer_Action_After_Find);
+
         return;
     }
 
     // now move the entity.
-    Limb->Body->Parent_Entity->Move_To(Difference * Limb->Get(ATTRIBUTE_TYPES::SPEED));
+    Limb->Body->Parent_Entity->Accelerate_To(Difference, mag);
 }
 
+void Entity::Analyze_State_With_Bias(TASK_TYPES bias){
+    // re-evaluate the entity state and make an action/action chain depending on the situation.
 
-void Entity::Move_To(FVector3 New_Location){
-    // the speed difference is also stored for velocity calculation into the effect->Speed section.
-    float Magnitude = sqrt(New_Location.X * New_Location.X + New_Location.Y * New_Location.Y + New_Location.Z * New_Location.Z);
 
-    float Max_Velocity = Specie.Get(ATTRIBUTE_TYPES::SPEED);
+}
 
-    Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] = min(Max_Velocity, Current_Effects.Get(ATTRIBUTE_TYPES::VELOCITY) + Magnitude);
+void Entity::Break_Speed(){
+    //  ((v/10)^2)/2
 
-    Position.HIGH += New_Location * Current_Effects.Get(ATTRIBUTE_TYPES::VELOCITY);
+    float Velocity = Current_Effects.Get(ATTRIBUTE_TYPES::VELOCITY);
+
+    float Distance = ((Velocity / 10) * (Velocity / 10)) / 2;
+
+    // by using the GLOBALS::TICK_LENGTH we can extract how much will the entity break in this specific tick
+    float Break = Distance / (GLOBALS::TICK_LENGTH / GLOBALS::SECOND);
+
+    Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] = max(0.f, Velocity - Break);
+}
+
+void Entity::Accelerate_To(FVector3 New_Location, float acceleration){
+    Direction += New_Location;
+
+    float Max_Velocity = Specie->Get(ATTRIBUTE_TYPES::SPEED);
+
+    float New_Velocity = Current_Effects.Get(ATTRIBUTE_TYPES::VELOCITY) + (acceleration / 100);
+
+    Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] = min(Max_Velocity, New_Velocity);
 }
 
 // the consume do function
@@ -486,8 +509,10 @@ void Consume::Do(){
                      // check if the health is now reasonable.
                     if (Health_Percentage >= 0.9f){
                         Is_Done = true;
-                        return false;
+                        return false;   // return false, since the task at hand is no longer needed.
                     }
+
+                    return true;
                 }, 
                 new Fight(ENTITY_TYPE::ENTITY),
                 nullptr
@@ -522,7 +547,7 @@ void Entity::Stack_Mundane_Tasks(Body_Part* brain){
     if (Tasks.size() != 0)
         return;
 
-    int Chosen_Task = Int_Range(0, 1);
+    int Chosen_Task = Int_Range(0, 100);
 
     // Wander
     if (Chosen_Task == 0){
@@ -539,7 +564,7 @@ void Entity::Stack_Mundane_Tasks(Body_Part* brain){
 // Critical tasks are if HEALTH is near zero
 void Entity::Stack_Critical_Tasks(Body_Part* brain){
     // check if the brains flat health is near zero
-    float Current_Health_State = brain->Get(ATTRIBUTE_TYPES::HEALTH) / SPECIE_MINMAX_VALUES.at(Specie.Specie).Maximum_Attributes.Get(ATTRIBUTE_TYPES::HEALTH);
+    float Current_Health_State = brain->Get(ATTRIBUTE_TYPES::HEALTH) / SPECIE_MINMAX_VALUES.at(Specie->Specie).Maximum_Attributes.Get(ATTRIBUTE_TYPES::HEALTH);
 
     if (Current_Health_State < 0.2f){
         Tasks.push_back(new Consume(ATTRIBUTE_TYPES::HEALTH));
@@ -547,7 +572,7 @@ void Entity::Stack_Critical_Tasks(Body_Part* brain){
 
 }
 
-void Entity::Process_Tasks(Body_Part* brain){
+void Entity::Process_Tasks([[maybe_unused]] Body_Part* brain){
     if (Tasks.size() == 0)
         return;
 
@@ -561,11 +586,11 @@ void Entity::AI(Body_Part* brain){
     // Randomize the priorities if the entity is high af.
 
     // TODO: make all the UI for action making.
-    for (auto Priority : brain->Priorities){
+    // for (auto Priority : brain->Priorities){
 
         
 
-    }
+    // }
 
     // Delete Done tasks and re-order the tasks that are left.
     Re_Order_Tasks();
@@ -579,10 +604,10 @@ void Entity::AI(Body_Part* brain){
 
 void Entity::Calculate_Passives(){
     // because of the nature of this function looping through the body parts, only specie::entities have passive calculations.
-    for (auto* limb : Specie.Body_Parts){
+    for (auto* limb : Specie->Body_Parts){
         
         for (auto& attr : limb->Flat_Stats.Attributes){
-            float Max_Attr_Value = SPECIE_MINMAX_VALUES.at(Specie.Specie).Maximum_Attributes.Get(attr.first);
+            float Max_Attr_Value = SPECIE_MINMAX_VALUES.at(Specie->Specie).Maximum_Attributes.Get(attr.first);
 
             attr.second = min(limb->Get(attr.first), Max_Attr_Value);
         }
@@ -592,8 +617,8 @@ void Entity::Calculate_Passives(){
 
 // goes through all limbs and checks if their HP is lower than what can be, then use some of the hunger bar to re-gen HP.
 void Entity::Passive_Heal_With(ATTRIBUTE_TYPES replenisher){
-    for (auto* limb : Specie.Body_Parts){
-        float Current_HP_Difference = abs(limb->Get(ATTRIBUTE_TYPES::HEALTH) - SPECIE_MINMAX_VALUES.at(Specie.Specie).Maximum_Attributes.Get(ATTRIBUTE_TYPES::HEALTH));
+    for (auto* limb : Specie->Body_Parts){
+        float Current_HP_Difference = abs(limb->Get(ATTRIBUTE_TYPES::HEALTH) - SPECIE_MINMAX_VALUES.at(Specie->Specie).Maximum_Attributes.Get(ATTRIBUTE_TYPES::HEALTH));
 
         //The hunger stat is always from 0.f to 1.f. So if the hunger is full then it will also heal fully.
         limb->Flat_Stats.Attributes[ATTRIBUTE_TYPES::HEALTH] += Transform_To_Non_Linear(Current_HP_Difference * limb->Get(replenisher));
@@ -608,6 +633,7 @@ void Entity::Re_Order_Tasks(){
     // first clean done tasks.
     // breaks immediately if before done task is an undone task. 
     for (int i = Tasks.size() - 1; i >= 0 && Tasks[i]->Is_Done; i--){
+        delete Tasks[i];
         Tasks.erase(Tasks.begin() + i);
     }
 
@@ -626,7 +652,7 @@ void Entity::Calculate_Effects(){
     // Globals could be affecting these "curses" way before the infliction of the values to the flat stats.
     for (auto& Effect : Current_Effects.Attributes){
 
-        for (auto* limb : Specie.Body_Parts){
+        for (auto* limb : Specie->Body_Parts){
 
             // Because the effects are ranging from 0.0000001-esp to 1.99999+eps
             limb->Flat_Stats.Attributes[Effect.first] *= Effect.second;
@@ -649,11 +675,11 @@ void Entity::Tick(){
     Calculate_Passives();
 
     // For each head the entity can make an decision per tick.
-    for (auto* limb : Specie.Body_Parts)
+    for (auto* limb : Specie->Body_Parts)
         if (limb->Type == BODY_PART_TYPES::HEAD)
             AI(limb);
 
-    Physics();
+    //Physics();
 }
 
 float Get_Drag_Force(Entity* e){
@@ -664,15 +690,33 @@ float Get_Drag_Force(Entity* e){
     Fluid_Density = 1.225f;
     Flow_Speed = e->Get_Attribute(ATTRIBUTE_TYPES::VELOCITY);
 
-    Drag_Coefficient = 1.6f;
+    Drag_Coefficient = 10.6f;
     Drag_Force = 0.5f * Fluid_Density * Reference_Area * Flow_Speed * Flow_Speed * Drag_Coefficient;
 
     return Drag_Force;
 }
 
 void Entity::Physics(){
-    // Decrease Velocity
-    Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] -= Get_Drag_Force(this) / Specie.Get(ATTRIBUTE_TYPES::SIZE);
+
+    // Velocity calculations
+    if (Current_Effects.Attributes.find(ATTRIBUTE_TYPES::VELOCITY) != Current_Effects.Attributes.end()){
+
+        float Max_Speed = Specie->Get(ATTRIBUTE_TYPES::SPEED);
+
+        float Velocity = Current_Effects.Get(ATTRIBUTE_TYPES::VELOCITY);
+
+        float Drag_Effect = Get_Drag_Force(this) / Specie->Get(ATTRIBUTE_TYPES::SIZE) * GLOBALS::TICK_DELTA;
+
+        float Dragged_Velocity = max(Velocity - Drag_Effect, 0.f);
+
+        // Decrease Velocity
+        Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] = min(Dragged_Velocity, Max_Speed);
+        
+        //cout << "from: " << Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY] << " To: " << Dragged_Velocity << endl;
+
+        // affect the position by the velocity
+        Position.HIGH += Direction * Current_Effects.Attributes[ATTRIBUTE_TYPES::VELOCITY];
+    }
 }
 
 string Describe_Attribute_As_Adjective(bool is_positive){
