@@ -33,6 +33,8 @@ namespace GLOBALS{
     extern const float TICK_LENGTH;
     extern const float SECOND;
     extern const float TICK_DELTA;
+
+    extern class Entity* Focus;
 }
 
 #endif

@@ -5,7 +5,7 @@
 #include "Globals.h"
 
 #include "Chaos.h"
-#include "../UI/Render.h"
+#include "./UI/Models.h"
 
 
 using namespace TerGen; 
@@ -13,10 +13,31 @@ using namespace TerGen;
 namespace MAP{
 
     inline unordered_map<IVector3, Tile, IVector3> Tiles;
-    inline TerGen::Generator* Terrain_Generator;
+    TerGen::Generator* Elevation_Generator;
+    TerGen::Generator* Humidity_Generator;
+    TerGen::Generator* Temperature_Generator;
 
     vector<Tile*> Get_Chunk_Content(IVector3 position){
         return Tiles[position].Content;
+    }
+
+    FVector3 Get_Relative_Position_To_Camera(Location position){
+        int Tile_Width = 1;
+        int Tile_Height = 1;
+
+        int Tile_Position_Y = position.HIGH.Y * Tile_Height;
+        int Tile_Position_X = position.HIGH.X * Tile_Width;
+
+        int Chunk_Position_Y = position.CHUNK.Y * GLOBALS::CHUNK_HEIGHT * Tile_Height;
+        int Chunk_Position_X = position.CHUNK.X * GLOBALS::CHUNK_WIDTH * Tile_Width;
+
+        int Camera_Position_Y = GLOBALS::CAMERA.Y * GLOBALS::CHUNK_HEIGHT * Tile_Height;
+        int Camera_Position_X = GLOBALS::CAMERA.X * GLOBALS::CHUNK_WIDTH * Tile_Width;
+
+        float Relative_Y = Tile_Position_Y + Chunk_Position_Y - Camera_Position_Y;
+        float Relative_X = Tile_Position_X + Chunk_Position_X - Camera_Position_X;
+
+        return FVector3{Relative_X, Relative_Y, 0.f};
     }
 
     Tile::Tile(Location position){
@@ -25,11 +46,7 @@ namespace MAP{
     }
 
     int Normalize_Tile_Elevation(float Y) {
-        int Normalized_Y = (abs(Y) * (int)RENDER::Tile_Textures.size());
-
-        int Offset_Y = (Normalized_Y % (int)RENDER::Tile_Textures.size());
-
-        return Offset_Y;
+        return Normalize_Float_To_Model_Index(Y, MODEL_TYPE::TILE);
     }
 
     vector<Tile*> Get_Surrounding_Content(IVector3 position){
@@ -57,7 +74,9 @@ namespace MAP{
     }
 
     void Init_TerGen(){
-        Terrain_Generator = new TerGen::Generator();
+        Elevation_Generator = new TerGen::Generator();
+        Humidity_Generator = new TerGen::Generator();
+        Temperature_Generator = new TerGen::Generator();
     }
 
     void Save_Map([[maybe_unused]] string file){
@@ -86,13 +105,25 @@ namespace MAP{
                     int Global_X = X + pos.X * GLOBALS::CHUNK_WIDTH;
 
                     // get the elevation from the generator
-                    float Elevation = TerGen::Warp_Noise({Global_X, Global_Y}, Terrain_Generator);
+                    float Elevation = TerGen::Warp_Noise({Global_X, Global_Y}, Elevation_Generator);
+                    
+                    // get the humidity from the generator
+                    float Humidity = TerGen::Warp_Noise({Global_X, Global_Y}, Humidity_Generator);
+
+                    // get the temperature from the generator
+                    float Temperature = TerGen::Warp_Noise({Global_X, Global_Y}, Temperature_Generator);
 
                     // get the texture from the generator
                     int Texture = Normalize_Tile_Elevation(Elevation);
 
                     // set the texture
                     Current_Tile->ID = Texture;
+
+                    // set the humidity
+                    Current_Tile->Humidity = Humidity;
+
+                    // set the temperature
+                    Current_Tile->Temperature = Temperature;
 
                     // add the tile to the chunk
                     Current_Chunk->Content.push_back(Current_Tile);

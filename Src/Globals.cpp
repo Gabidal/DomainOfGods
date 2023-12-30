@@ -25,8 +25,8 @@ namespace GLOBALS{
     const float ENTITY_DENSITY = 0.1f;
     constexpr float MAX_LUCK_PERCENTAGE = 0.75f;
 
-    const int CHUNK_WIDTH = 10;
-    const int CHUNK_HEIGHT = 10;
+    const int CHUNK_WIDTH = 50;
+    const int CHUNK_HEIGHT = 50;
     const int CHUNK_DEPTH = 10;
 
     // Center as {0, 0}
@@ -39,5 +39,6 @@ namespace GLOBALS{
     const float SECOND = 1000;        // 1000ms
     const float TICK_DELTA = TICK_LENGTH / SECOND;
 
+    Entity* Focus = nullptr;
 }
 

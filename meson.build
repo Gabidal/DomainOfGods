@@ -22,7 +22,8 @@ src = files(
   'Src/Map.cpp',
   'Src/Chaos.cpp',
 
-  'UI/Render.cpp',
+  'UI/GGUI_Render.cpp',
+  'UI/Models.cpp',
 
   'main.cpp'
 )

@@ -425,19 +425,12 @@ void Find::Do(){
     if (mag <= 0.5f){
         Is_Done = true;
         Limb->Body->Parent_Entity->Break_Speed();
-        Limb->Body->Parent_Entity->Analyze_State_With_Bias(Prefer_Action_After_Find);
 
         return;
     }
 
     // now move the entity.
     Limb->Body->Parent_Entity->Accelerate_To(Difference, mag);
-}
-
-void Entity::Analyze_State_With_Bias(TASK_TYPES bias){
-    // re-evaluate the entity state and make an action/action chain depending on the situation.
-
-
 }
 
 void Entity::Break_Speed(){
@@ -557,7 +550,7 @@ void Entity::Stack_Mundane_Tasks(Body_Part* brain){
         Current_Location.HIGH += {Float_Range(-10.f, 10.f), Float_Range(-10.f, 10.f), 0};
         Current_Location.CHUNK += {Int_Range(-10, 10), Int_Range(-10, 10), 0};
 
-        Tasks.push_back(new Find(Current_Location, TASK_TYPES::UNKNOWN, brain));
+        Tasks.push_back(new Find(Current_Location, brain));
     }
 }
 

@@ -1643,8 +1643,8 @@ public:
 
     TASK_TYPES Prefer_Action_After_Find;
 
-    Find(Location target, TASK_TYPES prefer_action_after_find, Body_Part* limb) : Target_Position(target), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND; Limb = limb;  }
-    Find(ENTITY_TYPE type, TASK_TYPES prefer_action_after_find, Body_Part* limb) : Target_Type(type), Prefer_Action_After_Find(prefer_action_after_find) { Type = TASK_TYPES::FIND; Limb = limb; }
+    Find(Location target, Body_Part* limb) : Target_Position(target) { Type = TASK_TYPES::FIND; Limb = limb;  }
+    Find(ENTITY_TYPE type, Body_Part* limb) : Target_Type(type) { Type = TASK_TYPES::FIND; Limb = limb; }
 
     void Do() override;
 };
@@ -1718,8 +1718,6 @@ public:
     void Stack_Mundane_Tasks(Body_Part* brain);
     void Stack_Critical_Tasks(Body_Part* brain);
     void Process_Tasks(Body_Part* brain);
-
-    void Analyze_State_With_Bias(TASK_TYPES bias);
 
     // Passives
     void Calculate_Passives();

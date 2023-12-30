@@ -1,7 +1,7 @@
 #include "Chaos.h"
 #include "../Dependencies/TerGen.h"
-#include "../UI/Render.h"
 #include "Globals.h"
+#include "../UI/Models.h"
 
 namespace CHAOS{
 
@@ -10,14 +10,12 @@ namespace CHAOS{
 
     void Init(){
         Entity_Generator = new TerGen::Generator();
-
-
     }
 
     int Normalize_Entity_Elevation(float Y) {
-        int Normalized_Y = (abs(Y) * (int)RENDER::Entity_Textures.size());
+        int Normalized_Y = (abs(Y) * (int)Models[MODEL_TYPE::ENTITY].size());
 
-        int Offset_Y = (Normalized_Y % (int)RENDER::Entity_Textures.size());
+        int Offset_Y = (Normalized_Y % (int)Models[MODEL_TYPE::ENTITY].size());
 
         return Offset_Y;
     }

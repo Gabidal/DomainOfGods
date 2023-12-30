@@ -9,6 +9,8 @@
 #define _GGUI_H_
 
 //This header is used with the GGUI.lib.
+#undef min
+#undef max
 
 #include <string>
 #include <vector>
@@ -17,15 +19,15 @@
 #include <chrono>
 #include <atomic>
 #include <unordered_map>
+#include <thread>
+#include <iostream>
+#include <fstream>
 
-//GGUI uses the ANSI escape code
-//https://en.wikipedia.org/wiki/ANSI_escape_code
+
 namespace GGUI{
-    
     //GGUI uses the ANSI escape code
     //https://en.wikipedia.org/wiki/ANSI_escape_code
-    
-    
+
     namespace SYMBOLS{
         inline std::string TOP_LEFT_CORNER = "┌";//"\e(0\x6c\e(B";
         inline std::string BOTTOM_LEFT_CORNER = "└";//"\e(0\x6d\e(B";
@@ -70,50 +72,9 @@ namespace GGUI{
             {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_DOWN, HORIZONTAL_BOTTOM_CONNECTOR},
             {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_UP, HORIZONTAL_TOP_CONNECTOR},
 
+            {CONNECTS_LEFT | CONNECTS_RIGHT | CONNECTS_UP | CONNECTS_DOWN, CROSS_CONNECTOR}
         };
 
-    }
-
-    namespace Constants{
-        inline std::string ESC = "\e[";
-        inline std::string SEPERATE = ";";
-        inline std::string Text_Color = "38";
-        inline std::string Back_Ground_Color = "48";
-        inline std::string RESET_Text_Color;
-        inline std::string RESET_Back_Ground_Color;
-        inline std::string USE_RGB = "2";
-        inline std::string END_COMMAND = "m";
-        inline std::string CLEAR_SCREEN = ESC + "2J";
-
-        inline unsigned long long NON = 1 << 0;
-        inline unsigned long long ENTER = 1 << 1;
-        inline unsigned long long ESCAPE = 1 << 2;
-        inline unsigned long long BACKSPACE = 1 << 3;
-        inline unsigned long long TAB = 1 << 4;
-        inline unsigned long long UP = 1 << 5;
-        inline unsigned long long DOWN = 1 << 6;
-        inline unsigned long long LEFT = 1 << 7;
-        inline unsigned long long RIGHT = 1 << 8;
-        inline unsigned long long SPACE = 1 << 9;
-        inline unsigned long long SHIFT = 1 << 10;
-
-        //key_Press includes [a-z, A-Z] & [0-9]
-        inline unsigned long long KEY_PRESS = 1 << 11;
-
-        // EASY MOUSE API
-        inline unsigned long long MOUSE_LEFT_CLICKED = 1 << 12;
-        inline unsigned long long MOUSE_MIDDLE_CLICKED = 1 << 13;
-        inline unsigned long long MOUSE_RIGHT_CLICKED = 1 << 14;
-
-        // NOTE: These will be spammed until it is not pressed anymore!
-        inline unsigned long long MOUSE_LEFT_PRESSED = 1 << 15;
-        inline unsigned long long MOUSE_MIDDLE_PRESSED = 1 << 16;
-        inline unsigned long long MOUSE_RIGHT_PRESSED = 1 << 17;
-
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = 1 << 18;
-        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = 1 << 19;
-
-        inline void Init();
     }
 
     namespace TIME{
@@ -123,6 +84,7 @@ namespace GGUI{
         inline constexpr static  unsigned int HOUR = MINUTE * 60;
     }
 
+    // Inits with 'NOW()' when created
     class BUTTON_STATE{
     public:
         bool State = false;
@@ -134,6 +96,94 @@ namespace GGUI{
         }
     };
 
+    namespace Constants{
+        inline std::string ESC_CODE = "\e[";
+        inline std::string SEPERATE = ";";
+        inline std::string Text_Color = "38";
+        inline std::string Back_Ground_Color = "48";
+        inline std::string RESET_Text_Color;
+        inline std::string RESET_Back_Ground_Color;
+        inline std::string USE_RGB = "2";
+        inline std::string END_COMMAND = "m";
+        inline std::string CLEAR_SCREEN = ESC_CODE + "2J";
+        inline std::string CLEAR_SCROLLBACK = ESC_CODE + "3J";
+        inline std::string SET_CURSOR_TO_START = ESC_CODE + "H";
+        inline std::string RESET_CONSOLE = ESC_CODE + "c";
+
+        inline std::string EnableFeature(std::string command) { return ESC_CODE + "?" + command + "h"; }
+        inline std::string DisableFeature(std::string command) { return ESC_CODE + "?" + command + "l"; }
+ 
+        // Enable settings for ANSI
+        inline std::string REPORT_MOUSE_HIGHLIGHTS = ESC_CODE + "1000";
+        inline std::string REPORT_MOUSE_BUTTON_WHILE_MOVING = ESC_CODE + "1002";
+        inline std::string REPORT_MOUSE_ALL_EVENTS = ESC_CODE + "1003";
+
+        inline std::string MOUSE_CURSOR = "25";
+        inline std::string SCREEN_CAPTURE = "47"; // 47l = restores screen, 47h = saves screen
+        inline std::string ALTERNATIVE_SCREEN_BUFFER = "1049"; // 1049l = disables alternative buffer, 1049h = enables alternative buffer
+        // End of enable settings for ANSI
+
+        inline unsigned long long NON = (unsigned long long)1 << 0;
+        inline unsigned long long ENTER = (unsigned long long)1 << 1;
+        inline unsigned long long ESCAPE = (unsigned long long)1 << 2;
+        inline unsigned long long BACKSPACE = (unsigned long long)1 << 3;
+        inline unsigned long long TAB = (unsigned long long)1 << 4;
+        inline unsigned long long UP = (unsigned long long)1 << 5;
+        inline unsigned long long DOWN = (unsigned long long)1 << 6;
+        inline unsigned long long LEFT = (unsigned long long)1 << 7;
+        inline unsigned long long RIGHT = (unsigned long long)1 << 8;
+        inline unsigned long long SPACE = (unsigned long long)1 << 9;
+        inline unsigned long long SHIFT = (unsigned long long)1 << 10;
+        inline unsigned long long ALT = (unsigned long long)1 << 11;
+        inline unsigned long long CONTROL = (unsigned long long)1 << 12;
+        inline unsigned long long SUPER = (unsigned long long)1 << 13;
+        inline unsigned long long HOME = (unsigned long long)1 << 14;
+        inline unsigned long long INSERT = (unsigned long long)1 << 15;
+        inline unsigned long long DELETE = (unsigned long long)1 << 16;
+        inline unsigned long long END = (unsigned long long)1 << 17;
+        inline unsigned long long PAGE_UP = (unsigned long long)1 << 18;
+        inline unsigned long long PAGE_DOWN = (unsigned long long)1 << 19;
+        inline unsigned long long F0 = (unsigned long long)1 << 20;
+        inline unsigned long long F1 = (unsigned long long)1 << 21;
+        inline unsigned long long F2 = (unsigned long long)1 << 22;
+        inline unsigned long long F3 = (unsigned long long)1 << 23;
+        inline unsigned long long F4 = (unsigned long long)1 << 24;
+        inline unsigned long long F5 = (unsigned long long)1 << 25;
+        inline unsigned long long F6 = (unsigned long long)1 << 26;
+        inline unsigned long long F7 = (unsigned long long)1 << 27;
+        inline unsigned long long F8 = (unsigned long long)1 << 28;
+        inline unsigned long long F9 = (unsigned long long)1 << 29;
+        inline unsigned long long F10 = (unsigned long long)1 << 30;
+        inline unsigned long long F11 = (unsigned long long)1 << 31;
+        inline unsigned long long F12 = (unsigned long long)1 << 32;
+        inline unsigned long long F13 = (unsigned long long)1 << 33;
+        inline unsigned long long F14 = (unsigned long long)1 << 34;
+        inline unsigned long long F15 = (unsigned long long)1 << 35;
+        inline unsigned long long F16 = (unsigned long long)1 << 36;
+
+        // Should not fucking exist bro!
+        //inline unsigned long long SHIFT_TAB = (unsigned long long)1 << 37;
+
+
+        //key_Press includes [a-z, A-Z] & [0-9]
+        inline unsigned long long KEY_PRESS = (unsigned long long)1 << 38;
+
+        // EASY MOUSE API
+        inline unsigned long long MOUSE_LEFT_CLICKED = (unsigned long long)1 << 39;
+        inline unsigned long long MOUSE_MIDDLE_CLICKED = (unsigned long long)1 << 40;
+        inline unsigned long long MOUSE_RIGHT_CLICKED = (unsigned long long)1 << 41;
+
+        // NOTE: These will be spammed until it is not pressed anymore!
+        inline unsigned long long MOUSE_LEFT_PRESSED = (unsigned long long)1 << 42;
+        inline unsigned long long MOUSE_MIDDLE_PRESSED = (unsigned long long)1 << 43;
+        inline unsigned long long MOUSE_RIGHT_PRESSED = (unsigned long long)1 << 44;
+
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_UP = (unsigned long long)1 << 45;
+        inline unsigned long long MOUSE_MIDDLE_SCROLL_DOWN = (unsigned long long)1 << 46;
+
+        inline void Init();
+    }
+    
     namespace BUTTON_STATES{
         inline std::string ESC = "ECS";
         inline std::string F1 = "F1";
@@ -157,7 +207,7 @@ namespace GGUI{
         inline std::string ENTER = "ENTER";
         inline std::string CAPS = "CAPS";
         inline std::string SHIFT = "SHIFT";
-        inline std::string CTRL = "CTRL";
+        inline std::string CONTROL = "CTRL";
         inline std::string SUPER = "SUPER";
         inline std::string ALT = "ALT";
         inline std::string SPACE = "SPACE";
@@ -167,6 +217,7 @@ namespace GGUI{
         inline std::string HOME = "HOME";
         inline std::string PAGE_UP = "PAGE_UP";
         inline std::string DELETE = "DELETE";
+        inline std::string INSERT = "INSERT";
         inline std::string END = "END";
         inline std::string PAGE_DOWN = "PAGE_DOWN";
 
@@ -178,6 +229,54 @@ namespace GGUI{
         inline std::string MOUSE_LEFT = "MOUSE_LEFT";
         inline std::string MOUSE_MIDDLE = "MOUSE_MIDDLE";
         inline std::string MOUSE_RIGHT = "MOUSE_RIGHT";
+    };
+
+    inline std::map<std::string, unsigned long long> BUTTON_STATES_TO_CONSTANTS_BRIDGE = {
+
+        {BUTTON_STATES::ESC, Constants::ESCAPE},
+        {BUTTON_STATES::F1, Constants::F1},
+        {BUTTON_STATES::F2, Constants::F2},
+        {BUTTON_STATES::F3, Constants::F3},
+        {BUTTON_STATES::F4, Constants::F4},
+        {BUTTON_STATES::F5, Constants::F5},
+        {BUTTON_STATES::F6, Constants::F6},
+        {BUTTON_STATES::F7, Constants::F7},
+        {BUTTON_STATES::F8, Constants::F8},
+        {BUTTON_STATES::F9, Constants::F9},
+        {BUTTON_STATES::F10, Constants::F10},
+        {BUTTON_STATES::F11, Constants::F11},
+        {BUTTON_STATES::F12, Constants::F12},
+        //{BUTTON_STATES::PRTSC, Constants::PRINT_SCREEN},
+        //{BUTTON_STATES::SCROLL_LOCK, Constants::SCROLL_LOCK},
+        //{BUTTON_STATES::PAUSE, Constants::PAUSE},
+        //{BUTTON_STATES::SECTION, Constants::SECTION},
+        {BUTTON_STATES::BACKSPACE, Constants::BACKSPACE},
+        {BUTTON_STATES::TAB, Constants::TAB},
+        {BUTTON_STATES::ENTER, Constants::ENTER},
+        //{BUTTON_STATES::CAPS, Constants::CAPS},
+        {BUTTON_STATES::SHIFT, Constants::SHIFT},
+        {BUTTON_STATES::CONTROL, Constants::CONTROL},
+        {BUTTON_STATES::SUPER, Constants::SUPER},
+        {BUTTON_STATES::ALT, Constants::ALT},
+        {BUTTON_STATES::SPACE, Constants::SPACE},
+        //{BUTTON_STATES::ALTGR, Constants::ALTGR},
+        //{BUTTON_STATES::FN, Constants::FN},
+        {BUTTON_STATES::INS, Constants::INSERT},
+        {BUTTON_STATES::HOME, Constants::HOME},
+        {BUTTON_STATES::PAGE_UP, Constants::PAGE_UP},
+        {BUTTON_STATES::DELETE, Constants::DELETE},
+        {BUTTON_STATES::INSERT, Constants::INSERT},
+        {BUTTON_STATES::END, Constants::END},
+        {BUTTON_STATES::PAGE_DOWN, Constants::PAGE_DOWN},
+
+        {BUTTON_STATES::UP, Constants::UP},
+        {BUTTON_STATES::DOWN, Constants::DOWN},
+        {BUTTON_STATES::LEFT, Constants::LEFT},
+        {BUTTON_STATES::RIGHT, Constants::RIGHT},
+
+        {BUTTON_STATES::MOUSE_LEFT, Constants::MOUSE_LEFT_CLICKED},
+        {BUTTON_STATES::MOUSE_MIDDLE, Constants::MOUSE_MIDDLE_CLICKED},
+        {BUTTON_STATES::MOUSE_RIGHT, Constants::MOUSE_RIGHT_CLICKED}
     };
 
     class RGB{
@@ -203,42 +302,48 @@ namespace GGUI{
 
         RGB(){}
 
-        std::string Get_Colour(){
+        std::string Get_Colour() const{
             return std::to_string(Red) + Constants::SEPERATE + std::to_string(Green) + Constants::SEPERATE + std::to_string(Blue);
         }
     
-        std::string Get_Over_Head(bool Is_Text_Color = true){
+        std::string Get_Over_Head(bool Is_Text_Color = true) const{
             if(Is_Text_Color){
-                return Constants::ESC + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC_CODE + Constants::Text_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
             }
             else{
-                return Constants::ESC + Constants::Back_Ground_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
+                return Constants::ESC_CODE + Constants::Back_Ground_Color + Constants::SEPERATE + Constants::USE_RGB + Constants::SEPERATE;
             }
         }
     
-        bool operator==(const RGB& Other){
+        bool operator==(const RGB& Other) const{
             return (Red == Other.Red) && (Green == Other.Green) && (Blue == Other.Blue);
         }
+    
+        RGB operator+(const RGB& Other) const{
+            return RGB(Red + Other.Red, Green + Other.Green, Blue + Other.Blue);
+        }
+    
     };
 
     class RGBA : public RGB{
     private:
+    // Ranging from 0. - 1.
         float Fast_Alpha = 1;
 
         union{
-            unsigned char Alpha = UCHAR_MAX;
+            unsigned char Alpha = std::numeric_limits<unsigned char>::max();
             unsigned char A;
         };
     public:
 
         void Set_Alpha(unsigned char a){
             Alpha = a;
-            Fast_Alpha = (float)Alpha / UCHAR_MAX;
+            Fast_Alpha = (float)Alpha / std::numeric_limits<unsigned char>::max();
         }
 
         void Set_Alpha(float a){
             Fast_Alpha = a;
-            Alpha = (unsigned char)(a * UCHAR_MAX);
+            Alpha = (unsigned char)(a * std::numeric_limits<unsigned char>::max());
         }
 
         RGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0){
@@ -269,27 +374,63 @@ namespace GGUI{
         }
 
         RGBA operator*(const RGBA& Other){
-            return RGBA(Red * ((float)Other.Red * Other.Fast_Alpha), Green * ((float)Other.Green * Other.Fast_Alpha), Blue * ((float)Other.Blue * Other.Fast_Alpha), Fast_Alpha);
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+            
+            return RGBA(
+                ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha), 
+                ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha), 
+                ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha),
+                Fast_Alpha
+            );
         }
 
         RGBA operator+(const RGBA& Other){
-            return RGBA(Red + ((float)Other.Red * Other.Fast_Alpha), Green + ((float)Other.Green * Other.Fast_Alpha), Blue + ((float)Other.Blue * Other.Fast_Alpha), Fast_Alpha);
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+
+            return RGBA(
+                ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha), 
+                ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha), 
+                ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha),
+                Fast_Alpha
+            );
         }
 
         RGBA operator*=(const RGBA& Other){
-            Red *= ((float)Other.Red * (float)Other.Fast_Alpha);
-            Green *= ((float)Other.Green * (float)Other.Fast_Alpha);
-            Blue *= ((float)Other.Blue * (float)Other.Fast_Alpha);
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+
+            this->Red = ((float)this->Red * Reverse_Alpha) * ((float)Other.Red * Other.Fast_Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) * ((float)Other.Green * Other.Fast_Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) * ((float)Other.Blue * Other.Fast_Alpha);
+
             return *this;
         }
 
         RGBA operator+=(const RGBA& Other){
-            Red += ((float)Other.Red * (float)Other.Fast_Alpha);
-            Green += ((float)Other.Green * (float)Other.Fast_Alpha);
-            Blue += ((float)Other.Blue * (float)Other.Fast_Alpha);
+
+            // Calculate the divider which is by default 2, but gets smaller the less the Fast_Alpha is.
+            // Fast_Alpha ranges from 0 to 1.
+
+            // Make the reverse alpha
+            float Reverse_Alpha = 1 - Other.Fast_Alpha;
+
+            this->Red = ((float)this->Red * Reverse_Alpha) + ((float)Other.Red * Other.Fast_Alpha);
+            this->Green = ((float)this->Green * Reverse_Alpha) + ((float)Other.Green * Other.Fast_Alpha);
+            this->Blue = ((float)this->Blue * Reverse_Alpha) + ((float)Other.Blue * Other.Fast_Alpha);
+
+            // float Divider = 1 + Other.Fast_Alpha;
+
+            // Red = ((float)Red + ((float)Other.Red * (float)Other.Fast_Alpha)) / Divider;
+            // Green = ((float)Green + ((float)Other.Green * (float)Other.Fast_Alpha)) / Divider;
+            // Blue = ((float)Blue + ((float)Other.Blue * (float)Other.Fast_Alpha)) / Divider;
+
+            // Red += ((float)Other.Red * (float)Other.Fast_Alpha);
+            // Green += ((float)Other.Green * (float)Other.Fast_Alpha);
+            // Blue += ((float)Other.Blue * (float)Other.Fast_Alpha);
             return *this;
         }
-
 
     };
 
@@ -320,8 +461,8 @@ namespace GGUI{
     }
 
     void Constants::Init(){
-        RESET_Text_Color = ESC + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
-        RESET_Back_Ground_Color = ESC + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
+        RESET_Text_Color = ESC_CODE + Text_Color + SEPERATE + USE_RGB + SEPERATE + RGB(255, 255, 255).Get_Colour() + END_COMMAND;
+        RESET_Back_Ground_Color = ESC_CODE + Back_Ground_Color + SEPERATE + USE_RGB + SEPERATE + RGB(0, 0, 0).Get_Colour() + END_COMMAND;
     }
 
     class Vector2{
@@ -335,6 +476,18 @@ namespace GGUI{
         }
 
         Vector2(){}
+
+        Vector2 operator+(float num){
+            return Vector2(X + num, Y + num);
+        }
+
+        Vector2 operator-(float num){
+            return Vector2(X - num, Y - num);
+        }
+
+        Vector2 operator*(float num){
+            return Vector2(X * num, Y * num);
+        }
     };
 
     class Vector3 : public Vector2{
@@ -366,6 +519,11 @@ namespace GGUI{
             X += other->X;
             Y += other->Y;
             Z += other->Z;
+        }
+
+        void operator+=(Vector2 other){
+            X += other.X;
+            Y += other.Y;
         }
     };
 
@@ -453,6 +611,7 @@ namespace GGUI{
         unsigned int Y = 0;
         int Scale = 1;
 
+        // The input information like the character written.
         Input(char d, unsigned long long t){
             Data = d;
             Criteria = t;
@@ -490,10 +649,15 @@ namespace GGUI{
         std::chrono::high_resolution_clock::time_point Start_Time;
         size_t End_Time = 0;
 
-        Memory(size_t end, std::function<bool(GGUI::Event* e)>job){
+        // By default all memories automatically will not prolong each other similar memories.
+        bool Prolong_Memory = false;
+
+        // When the job starts, job, prolong previous similar job by this time.
+        Memory(size_t end, std::function<bool(GGUI::Event* e)>job, bool prolong = false){
             Start_Time = std::chrono::high_resolution_clock::now();
             End_Time = end;
             Job = job;
+            Prolong_Memory = prolong;
         }
     };
 
@@ -530,6 +694,11 @@ namespace GGUI{
         virtual VALUE* Copy() {
             return nullptr;
         };
+
+        // Default VALUE wont do any parsing.
+        static VALUE* Parse(std::string val){
+            return nullptr;
+        }  
     };
 
     class NUMBER_VALUE : public VALUE{
@@ -637,32 +806,36 @@ namespace GGUI{
     };
 
     namespace STYLES{
-        inline std::string Border                          = "Border";
-        inline std::string Text_Color                      = "Text_Color";
-        inline std::string Background_Color               = "Background_Color";
-        inline std::string Border_Colour                   = "Border_Colour";
-        inline std::string Border_Background_Color        = "Border_Background_Color";
+        inline std::string Border                           = "Border";
+        inline std::string Text_Color                       = "Text_Color";
+        inline std::string Background_Color                 = "Background_Color";
+        inline std::string Border_Colour                    = "Border_Colour";
+        inline std::string Border_Background_Color          = "Border_Background_Color";
 
         inline std::string Hover_Border_Color               = "Hover_Border_Color";
         inline std::string Hover_Text_Color                 = "Hover_Text_Color";
-        inline std::string Hover_Background_Color          = "Hover_Background_Color";
-        inline std::string Hover_Border_Background_Color   = "Hover_Border_Background_Color";
+        inline std::string Hover_Background_Color           = "Hover_Background_Color";
+        inline std::string Hover_Border_Background_Color    = "Hover_Border_Background_Color";
 
-        inline std::string Focus_Border_Color              = "Focus_Border_Color";
-        inline std::string Focus_Text_Color                = "Focus_Text_Color";
-        inline std::string Focus_Background_Color         = "Focus_Background_Color";
-        inline std::string Focus_Border_Background_Color  = "Focus_Border_Background_Color";
+        inline std::string Focus_Border_Color               = "Focus_Border_Color";
+        inline std::string Focus_Text_Color                 = "Focus_Text_Color";
+        inline std::string Focus_Background_Color           = "Focus_Background_Color";
+        inline std::string Focus_Border_Background_Color    = "Focus_Border_Background_Color";
 
-        inline std::string Flow_Priority                   = "Flow_Priority";
-        inline std::string Wrap                            = "Wrap";     
+        inline std::string Flow_Priority                    = "Flow_Priority";
+        inline std::string Wrap                             = "Wrap";     
         
-        inline std::string Text_Position                   = "Text_Position";
-        inline std::string Allow_Input_Overflow            = "Allow_Input_Overflow";
-        inline std::string Allow_Dynamic_Size              = "Allow_Dynamic_Size";     
-        inline std::string Margin                          = "Margin";
+        inline std::string Text_Position                    = "Text_Position";
+        inline std::string Allow_Input_Overflow             = "Allow_Input_Overflow";
+        inline std::string Allow_Dynamic_Size               = "Allow_Dynamic_Size"; // boolean, Tries to emulate the size of the parent like in 'Flexbox: Display;' 
+        inline std::string Margin                           = "Margin";
 
-        inline std::string Shadow                          = "Shadow";  // 0 - 100
-        inline std::string Opacity                         = "Opacity"; // 0 - 100
+        inline std::string Shadow                           = "Shadow";  // 0 - 100
+        inline std::string Opacity                          = "Opacity"; // 0 - 100
+
+        inline std::string Anchor                           = "Anchor";  // gives the line number in which the element is anchored.
+
+        inline std::string Allow_Scrolling                  = "Allow_Scrolling";
     };
 
     enum class STAIN_TYPE{
@@ -674,6 +847,7 @@ namespace GGUI{
         TEXT = 1 << 4,   //text changes, this is primarily for text_field
         CLASS = 1 << 5, //This is used to tell the renderer that there are still un_parsed classes.
         STATE = 1 << 6, // This is for Switches that based on their state display one symbol differently.
+        MOVE = 1 << 7, // This is for elements that are moved.
     };
  
     inline unsigned int operator|(STAIN_TYPE a, STAIN_TYPE b){
@@ -690,7 +864,7 @@ namespace GGUI{
 
     class STAIN{
     public:
-        STAIN_TYPE Type = (STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS);
+        STAIN_TYPE Type = STAIN_TYPE::CLEAN; //(STAIN_TYPE)(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
 
 
         bool is(STAIN_TYPE f){
@@ -716,9 +890,9 @@ namespace GGUI{
             Type = (STAIN_TYPE)((unsigned int)Type | f);
         }
 
-        void Stain_All(){
-            Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS);
-        }
+        // void Stain_All(){
+        //     Dirty(STAIN_TYPE::COLOR | STAIN_TYPE::EDGE | STAIN_TYPE::DEEP | STAIN_TYPE::STRECH | STAIN_TYPE::CLASS | STAIN_TYPE::MOVE);
+        // }
 
     };
 
@@ -748,6 +922,7 @@ namespace GGUI{
     }
 
     enum class State{
+        UNKNOWN,
 
         RENDERED,
         HIDDEN
@@ -757,8 +932,12 @@ namespace GGUI{
     namespace SETTINGS{
         // How fast for a detection of hold down situation.
         inline unsigned long long Mouse_Press_Down_Cooldown = 365;
-
+        inline unsigned long long Input_Clear_Time = 16;
+        inline bool Word_Wrapping = true;
     };
+  
+    // For templates.
+    extern std::vector<Action*> Event_Handlers;
 
     class Element{
     protected:
@@ -825,24 +1004,32 @@ namespace GGUI{
             RGB border_background_color
         );
 
-        //End of user constructors.
+        // Disable Copy constructor
+        Element(const Element&);
+
+        //Start of destructors.
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+        ~Element();
+
+        //
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+                
+        virtual Element* Safe_Move(){
+            Element* new_element = new Element();
+            *new_element = *(Element*)this;
+
+            return new_element;
+        }
+
+        // USe this when you want to duplicate the same element with its properties safely.
+        Element* Copy();
+
+        virtual void Fully_Stain();
 
         // If you want to make a representing element* that isnt the same as the Abstract one.
         // Then Remember to USE THIS!
         void Inherit_States_From(Element* abstract);
-
-        template<typename T>
-        T* At(std::string s){
-            T* v = (T*)Style[s];
-
-            if (v == nullptr){
-                v = new T();
-
-                Style[s] = v;
-            }
-
-            return v;
-        }
 
         void Parse_Classes();
 
@@ -893,20 +1080,29 @@ namespace GGUI{
         // return int as 0 - 100
         int Get_Opacity(); 
 
+        bool Is_Transparent();
+
+        bool Is_Anchored();
+
+        int Get_Anchor_Location();
+
+        void Set_Anchor_At_Current_Location();
+
+        void Remove_Anchor();
+
         unsigned int Get_Processed_Width();
         unsigned int Get_Processed_Height();
 
+        // Direction: Unsupported atm!!!
         void Show_Shadow(Vector2 Direction, RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
+
+        void Show_Shadow(RGB Shadow_Color, float Opacity = 1, float Length = 0.5);
 
         Element* Get_Parent(){
             return Parent;
         }
 
-        void Set_Parent(Element* parent){
-            if (parent){
-                Parent = parent;
-            }
-        }
+        void Set_Parent(Element* parent);
 
         bool Has(std::string s);
 
@@ -918,8 +1114,12 @@ namespace GGUI{
             return false;
         }
 
-        //returns borders in mind.
+        //returns the area which a new element could be fitted in.
         std::pair<unsigned int, unsigned int> Get_Fitting_Dimensions(Element* child);
+
+        // returns the maximum area of width and height which an element could be fit in.
+        // basically same as the Get_Fitting_Dimensions(), but with some extra safe checks, so use this.
+        std::pair<unsigned int, unsigned int> Get_Limit_Dimensions();
 
         virtual void Show_Border(bool b);
 
@@ -936,6 +1136,8 @@ namespace GGUI{
         virtual void Set_Childs(std::vector<Element*> childs);
 
         bool Children_Changed();
+        
+        bool Has_Transparent_Children();
 
         std::vector<Element*>& Get_Childs();
 
@@ -978,11 +1180,18 @@ namespace GGUI{
         RGB Get_Border_Background_Color();
         
         void Set_Text_Color(RGB color);
+
+        void Allow_Dynamic_Size(bool True);
         
         RGB Get_Text_Color();
 
+        static std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> Get_Fitting_Area(GGUI::Element* Parent, GGUI::Element* Child);
+
+        void Compute_Dynamic_Size();
+
         virtual std::vector<UTF> Render();
 
+        // Used to update the parent when the child cannot update on itself, for an example on removal of an element.
         virtual void Update_Parent(Element* New_Element);
 
         virtual void Add_Overhead(Element* w, std::vector<UTF>& Result);
@@ -1006,24 +1215,27 @@ namespace GGUI{
 
         std::pair<RGB, RGB>  Compose_All_Border_RGB_Values();
 
-        virtual std::string Get_Name(){
-            return "Element";
+        virtual std::string Get_Name() const {
+            return "Element<" + Name + ">";
         }
 
         void Set_Name(std::string name);
 
         bool Has_Internal_Changes();
 
-        virtual Element* Copy();
-
         //Makes suicide.
         void Remove();
 
         //Event handlers
-        void On_Click(std::function<void(GGUI::Event* e)> action);
+        void On_Click(std::function<bool(GGUI::Event* e)> action);
+
+        void On(unsigned long long criteria, std::function<bool(GGUI::Event* e)> action, bool GLOBAL = false);
 
         //This function returns nullptr, if the element could not be found.
         Element* Get_Element(std::string name);
+
+        // TEMPLATES
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
         //This function returns all child elements that have the same element type.
         template<typename T>
@@ -1036,13 +1248,28 @@ namespace GGUI{
                 result.push_back((T*)this);
             }
 
-            for (auto& e : Childs){
+            for (auto e : Childs){
                 std::vector<T*> child_result = e->Get_Elements<T>();
                 result.insert(result.end(), child_result.begin(), child_result.end());
             }
 
             return result;
         }
+
+        template<typename T>
+        T* At(std::string s){
+            T* v = (T*)Style[s];
+
+            if (v == nullptr){
+                v = new T();
+
+                Style[s] = v;
+            }
+
+            return v;
+        }
+
+        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
 
         void Re_Order_Childs();
 
@@ -1058,71 +1285,201 @@ namespace GGUI{
 
     };
 
-    class Window : public Element{
-        std::string Title = "";  //if this is empty then no title
+    enum class TEXT_LOCATION{
+        LEFT,
+        CENTER,
+        RIGHT,
+    };
 
-        RGB Before_Hiding_Border_Color = COLOR::WHITE;
-        RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
-        bool Has_Hidden_Borders = false;
-    public:
-        Window(){}
-
-        Window(std::string title, std::vector<std::string> classes = {});
-
-        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+    class Text_Field : public Element{
+    protected:
+        std::string Data = "";
+        std::string Previus_Data = "";
+        bool Allow_Text_Input = false;
         
-        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+    public:
+
+        Text_Field(){}
+
+        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {});
 
         //These next constructors are mainly for users to more easily create elements.
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height
-        );
 
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
+        Text_Field(
+            std::string Text,
             RGB text_color,
             RGB background_color
         );
 
-        Window(
-            std::string title, 
-            unsigned int width,
-            unsigned int height,
+        Text_Field(
+            std::string Text,
             RGB text_color,
             RGB background_color,
             RGB border_color,
             RGB border_background_color
         );
 
-        Window(
-            std::string title,
-            unsigned int width,
-            unsigned int height,
-            std::vector<Element*> Tree 
-        );
-
         //End of user constructors.
 
+        void Fully_Stain() override;
 
+        void Set_Data(std::string Data);
 
-        void Set_Title(std::string t);
+        std::string Get_Data();
 
-        std::string Get_Title();
+        void Set_Text_Position(TEXT_LOCATION Text_Position);
+
+        TEXT_LOCATION Get_Text_Position();
         
-        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
-
-        std::string Get_Name() override;
-
-        Element* Copy() override;
-
         void Show_Border(bool state) override;
+        
+        static std::pair<unsigned int, unsigned int> Get_Text_Dimensions(std::string& text); 
 
-        void Show_Border(bool state, bool previus_state) override;
+        std::vector<UTF> Render() override;
+        
+        bool Resize_To(Element* parent) override;
 
+        std::string Get_Name() const override;
+
+        //async function, 
+        void Input(std::function<void(char)> Then);
+
+        void Enable_Text_Input();
+
+        void Disable_Text_Input();
+
+        bool Is_Input_Allowed(){
+            return Allow_Text_Input;
+        }
+
+        //Non visual updates dont need to update frame
+        void Enable_Input_Overflow();
+
+        //Non visual updates dont need to update frame
+        void Disable_Input_Overflow();
+
+        void Enable_Dynamic_Size();
+
+        void Disable_Dynamic_Size();
+
+        static void Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+        static void Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+        static void Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
+
+        Element* Safe_Move() override {
+            Text_Field* new_Text_Field = new Text_Field();
+            *new_Text_Field = *(Text_Field*)this;
+
+            return new_Text_Field;
+        }
+    };
+
+    class Button : public Text_Field{
+    protected:
+        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
+            On_Click([=](Event* e){
+                // The default, on_click wont do anything.
+                press(this);
+
+                return true;
+            });
+        }
+    
+        void Default_Button_Text_Align(){
+            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
+        }
+
+        // DONT USE AS USER!!
+        Button(){}
+    public:
+
+        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
+            Defualt_Button_Behaviour(press);
+            Default_Button_Text_Align();
+            Enable_Input_Overflow();
+            Dirty.Dirty(STAIN_TYPE::TEXT);
+            Show_Border(true);
+            Set_Name(Text);
+        }
+
+        Element* Safe_Move() override {
+            Button* new_Button = new Button();
+            *new_Button = *(Button*)this;
+
+            return new_Button;
+        }
+
+        std::string Get_Name() const override{
+            return "Button<" + Name + ">";
+        }
+    };
+
+    class Canvas : public Element{
+    private:
+        // DONT GIVE THIS TO USER!
+        Canvas(){}
+    protected:
+        std::vector<RGB> Buffer;
+    public:
+        Canvas(unsigned int w, unsigned int h, Coordinates position);
+        
+        // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
+        void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
+        
+        void Flush();
+
+        std::vector<UTF> Render() override;
+
+        Element* Safe_Move() override {
+            Canvas* new_Canvas = new Canvas();
+            *new_Canvas = *(Canvas*)this;
+
+            return new_Canvas;
+        }
+
+        std::string Get_Name() const override{
+            return "Canvas<" + Name + ">";
+        }
+    };
+
+    class Sprite{
+    public:
+        RGB Background_Color;
+        RGB Foreground_Color;
+        UTF Texture;
+
+        Sprite(UTF t = UTF(""), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
+
+        UTF Render();
+    };
+
+    class Terminal_Canvas : public Element{
+    private:
+        // DONT GIVE THIS TO USER!!!
+        Terminal_Canvas(){}
+    protected:
+        std::vector<Sprite> Buffer;
+    public:
+        Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
+        
+        void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
+
+        void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
+        
+        void Flush();
+        
+        std::vector<UTF> Render() override;
+        
+        Element* Safe_Move() override {
+            Terminal_Canvas* new_Terminal_Canvas = new Terminal_Canvas();
+            *new_Terminal_Canvas = *(Terminal_Canvas*)this;
+
+            return new_Terminal_Canvas;
+        }
+
+        std::string Get_Name() const override{
+            return "Terminal_Canvas<" + Name + ">";
+        }
     };
 
     enum class Grow_Direction{
@@ -1132,8 +1489,7 @@ namespace GGUI{
 
     class List_View : public Element{
     public:
-
-        //cache
+        //We can always assume that the list starts from the upper left corner, right?
         Element* Last_Child = new Element(0, 0, {0, 0});
 
         std::vector<std::pair<unsigned int, unsigned int>> Layer_Peeks;
@@ -1175,13 +1531,9 @@ namespace GGUI{
         
         //std::vector<UTF> Render() override;
 
-        std::string Get_Name() override;
-
-        void Update_Parent(Element* deleted) override;
+        std::string Get_Name() const override;
 
         bool Remove(Element* e) override;
-
-        Element* Copy() override;
 
         void Set_Growth_Direction(Grow_Direction gd){
             At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value = (int)gd;
@@ -1191,121 +1543,138 @@ namespace GGUI{
             return (Grow_Direction)At<NUMBER_VALUE>(STYLES::Flow_Priority)->Value;
         }
 
+        template<typename  T>
+        T* Get(int index){
+            if (index > Childs.size() - 1)
+                return nullptr;
+
+            if (index < 0)
+                index = Childs.size() + index - 1;
+
+            return (T*)this->Childs[index];
+        }
+
+        Element* Safe_Move() override {
+            List_View* new_List_View = new List_View();
+            *new_List_View = *(List_View*)this;
+
+            return new_List_View;
+        }
+
     };
 
-    
-    enum class TEXT_LOCATION{
-        LEFT,
-        CENTER,
-        RIGHT,
-    };
-
-    class Text_Field : public Element{
+    class Scroll_View : public Element{
     protected:
-        std::string Data = "";
-        std::string Previus_Data = "";
-        bool Allow_Text_Input = false;
-        
+        unsigned int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
+
+        List_View* Container = nullptr;
     public:
 
-        Text_Field(){}
+        // Constructors:
+        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+        Scroll_View(Grow_Direction grow_direction = Grow_Direction::ROW);
 
-        Text_Field(std::string Text, std::map<std::string, VALUE*> css = {});
+        Scroll_View(List_View& container);
+
+        Scroll_View(std::vector<Element*> Childs, Grow_Direction grow_direction = Grow_Direction::ROW);
+
+        // Re-pipeline functions:
+        // -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+        void Add_Child(Element* e) override;
+
+        void Allow_Scrolling(bool allow);
+    
+        bool Is_Scrolling_Enabled(){
+            return At<BOOL_VALUE>(STYLES::Allow_Scrolling)->Value;
+        }
+
+        void Scroll_Up();
+
+        void Scroll_Down();
+    };
+
+    class Window : public Element{
+        std::string Title = "";  //if this is empty then no title
+
+        RGB Before_Hiding_Border_Color = COLOR::WHITE;
+        RGB Before_Hiding_Border_Background_Color = COLOR::BLACK;
+        bool Has_Hidden_Borders = false;
+    public:
+        Window() : Element() {}
+
+        Window(std::string title, std::vector<std::string> classes = {});
+
+        Window(std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
+        
+        Window(std::string title, std::map<std::string, VALUE*> css, unsigned int width = 0, unsigned int height = 0, Element* parent = nullptr, Coordinates* position = nullptr);
 
         //These next constructors are mainly for users to more easily create elements.
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height
+        );
 
-        Text_Field(
-            std::string Text,
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
             RGB text_color,
             RGB background_color
         );
 
-        Text_Field(
-            std::string Text,
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
+            RGB text_color,
+            RGB background_color,
+            RGB border_color
+        );
+
+        Window(
+            std::string title, 
+            unsigned int width,
+            unsigned int height,
             RGB text_color,
             RGB background_color,
             RGB border_color,
             RGB border_background_color
         );
 
+        Window(
+            std::string title,
+            unsigned int width,
+            unsigned int height,
+            std::vector<Element*> Tree 
+        );
+
         //End of user constructors.
 
-        void Set_Data(std::string Data);
+        void Set_Title(std::string t);
 
-        std::string Get_Data();
-
-        void Set_Text_Position(TEXT_LOCATION Text_Position);
-
-        TEXT_LOCATION Get_Text_Position();
+        std::string Get_Title();
         
+        void Add_Overhead(Element* w, std::vector<UTF>& Result) override;
+
+        std::string Get_Name() const override;
+
         void Show_Border(bool state) override;
-        
-        static std::pair<unsigned int, unsigned int> Get_Text_Dimensions(std::string& text); 
 
-        std::vector<UTF> Render() override;
-        
-        bool Resize_To(Element* parent) override;
+        void Show_Border(bool state, bool previus_state) override;
 
-        std::string Get_Name() override;
+        Element* Safe_Move() override {
+            Window* new_Window = new Window();
+            *new_Window = *(Window*)this;
 
-        Element* Copy() override;
-
-        //async function, 
-        void Input(std::function<void(char)> Then);
-
-        void Enable_Text_Input();
-
-        void Disable_Text_Input();
-
-        bool Is_Input_Allowed(){
-            return Allow_Text_Input;
+            return new_Window;
         }
-
-        //Non visual updates dont need to update frame
-        void Enable_Input_Overflow();
-
-        //Non visual updates dont need to update frame
-        void Disable_Input_Overflow();
-
-        void Enable_Dynamic_Size();
-
-        void Disable_Dynamic_Size();
-
-
-        static void Center_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
-        static void Left_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
-        static void Right_Text(GGUI::Element* self, std::string Text, GGUI::Element* wrapper, std::vector<GGUI::UTF>& Previus_Render);
     };
 
-    
-    class Button : public Text_Field{
-    protected:
-        void Defualt_Button_Behaviour(std::function<void (Button* This)> press = [](Button* This){}){
-            On_Click([=](Event* e){
-                // The default, on_click wont do anything.
-                press(this);
-            });
-        }
-    
-        void Default_Button_Text_Align(){
-            At<NUMBER_VALUE>(STYLES::Text_Position)->Value = (int)TEXT_LOCATION::CENTER;
-        }
-
-        Button(bool Blank){}
-    public:
-
-        Button(std::string Text, std::function<void (Button* This)> press = [](Button* This){}) : Text_Field(Text){
-            Defualt_Button_Behaviour(press);
-            Default_Button_Text_Align();
-            Enable_Input_Overflow();
-            Dirty.Dirty(STAIN_TYPE::TEXT);
-            Show_Border(true);
-            Set_Name(Text);
-        }
-
-    };
-    
     class Switch : public Element{
+    private:
+        // DONT GIVE TO USER !!!
+        Switch(){}
     protected:
         bool State = false;
 
@@ -1327,6 +1696,17 @@ namespace GGUI{
         std::string Get_Data() { return Text; }
 
         void Set_Data(std::string data) { Text = data; Dirty.Dirty(STAIN_TYPE::TEXT); }
+        
+        Element* Safe_Move() override {
+            Switch* new_Switch = new Switch();
+            *new_Switch = *(Switch*)this;
+
+            return new_Switch;
+        }
+
+        std::string Get_Name() const override{
+            return "Switch<" + Name + ">";
+        }
     };
 
     class Radio_Button : public Switch{
@@ -1335,6 +1715,13 @@ namespace GGUI{
 
         bool Get_State(){
             return State;
+        }
+        
+        // The Swtich overrides it for us.
+        //Element* Safe_Move() override;
+        
+        std::string Get_Name() const override{
+            return "Radio_Button<" + Name + ">";
         }
     };
 
@@ -1345,47 +1732,13 @@ namespace GGUI{
         bool Get_State(){
             return State;
         }
-    };
-
-    
-    class Canvas : public Element{
-    protected:
-        std::vector<RGB> Buffer;
-    public:
-        Canvas(unsigned int w, unsigned int h, Coordinates position);
         
-        // This is to set a color in the canvas, you can set it to not flush, if youre gonna set more than one pixel.
-        void Set(unsigned int x, unsigned int y, RGB color, bool Flush = true);
-        
-        void Flush();
+        // The Swtich overrides it for us.
+        //Element* Safe_Move() override;
 
-        std::vector<UTF> Render() override;
-    };
-
-    class Sprite{
-    public:
-        RGB Background_Color;
-        RGB Foreground_Color;
-        UTF Texture;
-
-        Sprite(UTF t = UTF(""), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
-
-        UTF Render();
-    };
-
-    class Terminal_Canvas : public Element{
-    protected:
-        std::vector<Sprite> Buffer;
-    public:
-        Terminal_Canvas(unsigned int w, unsigned int h, Coordinates position);
-        
-        void Set(unsigned int x, unsigned int y, Sprite sprite, bool Flush = true);
-
-        void Set(unsigned int x, unsigned int y, UTF sprite, bool Flush = true);
-        
-        void Flush();
-        
-        std::vector<UTF> Render() override;
+        std::string Get_Name() const override{
+            return "Check_Box<" + Name + ">";
+        }
     };
 
     class Progress_Bar : public Element{
@@ -1409,7 +1762,260 @@ namespace GGUI{
         Progress_Bar(RGB Fill_Color, RGB Empty_Color);
         Progress_Bar(RGB Fill_COlor, RGB Empty_Color, unsigned int Width, unsigned int Height = 1);
 
+        
+        Element* Safe_Move() override {
+            Progress_Bar* new_Progress_Bar = new Progress_Bar();
+            *new_Progress_Bar = *(Progress_Bar*)this;
+
+            return new_Progress_Bar;
+        }
+
+        std::string Get_Name() const override{
+            return "Progress_Bar<" + Name + ">";
+        }
     };
+
+    /*
+        Utilities to manage file streams.
+    */
+
+    class FILE_STREAM;
+
+    extern std::unordered_map<std::string, FILE_STREAM*> File_Streamer_Handles;
+
+    extern void Add_File_Stream_Handle(std::string File_Handle, std::function<void()> Handle);
+
+    extern FILE_STREAM* Get_File_Stream_Handle(std::string File_Name);
+
+    extern std::string Get_Current_Location();
+
+    class FILE_STREAM{
+    private:
+        std::ifstream Handle;
+        std::vector<std::function<void()>> On_Change = {};
+        std::string Previous_Content = "";
+        unsigned long long Previous_Hash = 0;
+    public:
+        std::string Name = "";
+
+        FILE_STREAM(std::string File_Name, std::function<void()> on_change);
+
+        ~FILE_STREAM(){
+            Handle.close();
+        }
+
+        std::string Read();
+    
+        std::string Fast_Read() { return Previous_Content; }
+
+        void Changed();
+
+        void Add_On_Change_Handler(std::function<void()> on_change){
+            On_Change.push_back(on_change);
+        }
+    };
+
+    class FILE_POSITION{
+    public:
+        std::string File_Name = "";     // Originated.
+        unsigned int Line_Number = 0;   // Y
+        unsigned int Character = 0;     // X
+
+        FILE_POSITION(std::string File_Name, unsigned int Line_Number, unsigned int Character){
+            this->File_Name = File_Name;
+            this->Line_Number = Line_Number;
+            this->Character = Character;
+        }
+
+        FILE_POSITION() = default;
+
+        std::string To_String(){
+            return File_Name + ":" + std::to_string(Line_Number) + ":" + std::to_string(Character);
+        }
+    };
+
+    
+    class HTML : public Element{
+    private:
+        // DONT GIVE TO USER !!!
+        HTML(){}
+    private:
+        FILE_STREAM* Handle = nullptr;
+    public:
+        HTML(std::string File_Name);
+
+        Element* Safe_Move() override {
+            HTML* new_HTML = new HTML();
+            *new_HTML = *(HTML*)this;
+
+            return new_HTML;
+        }
+
+        std::string Get_Name() const override{
+            return "HTML<" + Name + ">";
+        }
+    };
+
+    enum class HTML_GROUP_TYPES{
+        UNKNOWN,
+        TEXT,
+        NUMBER,
+        OPERATOR,   // =, 
+        WRAPPER,    // <>, [], {}, (), "", ''
+        SPACING,    // newline, ' ', '\t'
+        ATTRIBUTE,  // Contains attributes as an wrapper extension. id="123"
+    };
+
+    enum class PARSE_BY{
+        NONE                    = 0,
+        TOKEN_WRAPPER           = 1 << 0,
+        DYNAMIC_WRAPPER         = 1 << 1, 
+        OPERATOR_PARSER         = 1 << 2,
+        NUMBER_POSTFIX_PARSER   = 1 << 3,
+    };
+
+    enum class HTML_POSITION_TYPE{
+        STATIC,     // Default positioning, like in GGUI.
+        RELATIVE,   // Relative to parent.
+        ABSOLUTE,   // Relative to screen.
+        FIXED,      // Relative to screen, but does not move with scrolling.
+        STICKY,     // Relative to screen until crosses given threshold.
+    };
+
+    extern PARSE_BY operator|(PARSE_BY first, PARSE_BY second);
+
+    extern PARSE_BY operator&(PARSE_BY first, PARSE_BY second);
+
+    extern void operator|=(PARSE_BY& first, PARSE_BY second);
+
+    class HTML_Token{
+    public:
+        HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
+        std::string Data = "";
+        std::vector<HTML_Token*> Childs;    // also contains attributes!
+        FILE_POSITION Position;
+
+        PARSE_BY Parsed_By = PARSE_BY::NONE;
+
+        HTML_Token(HTML_GROUP_TYPES Type, std::string Data){
+            this->Type = Type;
+            this->Data = Data;
+        }
+
+        HTML_Token(HTML_GROUP_TYPES Type, char Data, FILE_POSITION position){
+            this->Type = Type;
+            this->Data.push_back(Data);
+            this->Position = position;
+        }
+
+        // Checks if the Parsed_By contains specific bit mask.
+        bool Is(PARSE_BY f){
+            return (Parsed_By & f) == f;
+        }
+
+        bool Has(PARSE_BY f){
+            return (f & Parsed_By) > PARSE_BY::NONE;
+        }
+
+        HTML_Token() = default;
+    };
+
+    class HTML_Group{
+    public:
+        HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
+        char Start = 0;
+        char End = 0;
+        bool Is_Sticky = true;
+
+        HTML_Group(HTML_GROUP_TYPES Type, char Start, char End, bool Is_Sticky = true){
+            this->Type = Type;
+            this->Start = Start;
+            this->End = End;
+            this->Is_Sticky = Is_Sticky;
+        }
+    };
+
+    class HTML_Node{
+    public:
+        std::string Tag_Name = "";  // DIV, HREF, etc...
+        
+        std::vector<HTML_Node*> Childs;
+        HTML_Node* parent = nullptr;
+
+        FILE_POSITION Position;
+
+        HTML_Token* RAW = nullptr;
+        HTML_GROUP_TYPES Type = HTML_GROUP_TYPES::UNKNOWN;
+
+        // Postfixes are in child[0] for numbers.
+        // Decimals are also number typed.
+        // Operators left is Child[0] and Right at Child[1].
+        // Attributes cannot be computed, before some contextual data on AST level is constructed, since the postfix operands depend on these kind of information from parent.
+        std::unordered_map<std::string, GGUI::HTML_Token*> Attributes;    // contains ID, Name, Class, Color, BG_Color, etc...
+    };
+
+    extern void Parse(std::vector<HTML_Token*>& Input);
+
+    extern std::vector<Element*> Parse_HTML(std::string Raw_Buffer, Element* parent);
+
+    extern std::vector<HTML_Token*>& Parse_HTML(std::vector<HTML_Token*>& Input);
+
+    extern void Parse_Embedded_Bytes(int& i, std::vector<HTML_Token*>& Input);
+
+    extern void Parse_All_Wrappers(int& i, std::vector<HTML_Token*>& Input);
+
+    extern void Parse_Dynamic_Wrappers(int& i, std::vector<HTML_Token*>& Input, std::string word);
+
+    extern void Parse_Wrapper(std::string start_pattern, std::string end_pattern, int& i, std::vector<HTML_Token*>& Input);
+
+    extern const std::vector<HTML_Group> Groups;
+
+    extern std::vector<HTML_Token*> Lex_HTML(std::string Raw_Buffer);
+
+    extern std::vector<HTML_Node*> Parse_Lexed_Tokens(std::vector<HTML_Token*> Input);
+
+    extern std::unordered_map<std::string, std::function<GGUI::Element* (HTML_Node*)>>* HTML_Translators;
+
+    extern std::unordered_map<std::string, double> POSTFIX_COEFFICIENT;
+
+    extern std::unordered_map<std::string, void*> RELATIVE_COEFFICIENT;
+
+    // helper functions
+    #define CONCAT_IMPL(x, y) x##y
+    #define CONCAT(x, y) CONCAT_IMPL(x, y)
+
+    // For ease of use for adding translators for user custom HTML TAG parsers.
+    #define GGUI_Add_Translator(id, handler) \
+        auto CONCAT(_, __LINE__) = [](){ \
+            if (GGUI::HTML_Translators == nullptr){ \
+                GGUI::HTML_Translators = new std::unordered_map<std::string, std::function<GGUI::Element* (GGUI::HTML_Node*)>>(); \
+            } \
+            return GGUI::HTML_Translators->insert({id, handler}); \
+        }();
+
+    extern std::vector<Element*> Parse_Translators(std::vector<HTML_Node*>& Input);
+
+    extern HTML_Node* Factory(HTML_Token* Input);
+
+    extern void Parse_Numeric_Postfix(int& i, std::vector<HTML_Token*>& Input);
+
+    extern void Parse_Decimal(int& i, std::vector<HTML_Token*>& Input);
+
+    extern void Parse_Operator(int& i, std::vector<HTML_Token*>& Input, char operator_type);
+
+    extern void Report(std::string problem, FILE_POSITION location);
+
+    extern HTML_Node* Element_To_Node(Element* e);
+
+    extern double Compute_Val(HTML_Token* val, HTML_Node* parent, std::string attr_name);
+
+    extern double Compute_Operator(HTML_Token* op, HTML_Node* parent, std::string attr_name);
+
+    extern double Compute_Post_Fix_As_Coefficient(std::string postfix, HTML_Node* parent, std::string attr_name);
+
+    extern void Translate_Attributes_To_Element(Element* e, HTML_Node* input);
+
+    extern void Translate_Childs_To_Element(Element* e, HTML_Node* input, std::string* Set_Text_To);
 
     extern std::vector<UTF> Abstract_Frame_Buffer;               //2D clean vector whitout bold nor color
     extern std::string Frame_Buffer;                                 //string with bold and color, this what gets drawn to console.
@@ -1427,6 +2033,7 @@ namespace GGUI{
     extern std::map<std::string, Element*> Element_Names;
 
     extern Element* Focused_On;
+    extern Element* Hovered_On;
 
     extern Coordinates Mouse;    
     extern bool Mouse_Movement_Enabled;
@@ -1449,6 +2056,8 @@ namespace GGUI{
 
     extern bool Collides(GGUI::Element* a, GGUI::Coordinates b);
 
+    extern bool Collides(GGUI::Element* a, GGUI::Coordinates c, unsigned int Width, unsigned int Height);
+
     extern Element* Get_Accurate_Element_From(Coordinates c, Element* Parent);
 
     extern Coordinates Find_Upper_Element();
@@ -1468,7 +2077,7 @@ namespace GGUI{
     extern void Render_Frame();
 
     extern void Update_Max_Width_And_Height();
-    
+
     extern Coordinates Get_Terminal_Content_Size();
 
     void Update_Frame();
@@ -1502,7 +2111,11 @@ namespace GGUI{
 
     extern void Un_Focus_Element();
 
+    extern void Un_Hover_Element();
+
     extern void Update_Focused_Element(GGUI::Element* new_candidate);
+
+    extern void Update_Hovered_Element(GGUI::Element* new_candidate);
 
     extern void Event_Handler();
 
@@ -1526,6 +2139,7 @@ namespace GGUI{
 
     extern void Exit();
 
+    // Also handles shift tabs!
     extern void Handle_Tabulator();
 
     extern void Handle_Escape();

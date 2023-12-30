@@ -16,7 +16,10 @@ namespace MAP{
         // Chunk coordination if an single tile represents a whole chunk.
         // HIGH coordination for detailed chunk mapping inside other tiles. 
         Location Position;
-        int ID = 0;
+
+        int ID = 0; // Also used as elevation information.
+        float Humidity = 0.0f;
+        float Temperature = 0.0f;
 
         vector<Tile*> Content;
 
@@ -35,6 +38,7 @@ namespace MAP{
 
     extern vector<Tile*> Get_Surrounding_Content(IVector3 position, int Distance = 1);
 
+    FVector3 Get_Relative_Position_To_Camera(Location position);
 }
 
 #endif

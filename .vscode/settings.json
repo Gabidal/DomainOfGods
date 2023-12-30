@@ -68,7 +68,8 @@
         "xstddef": "cpp",
         "xtree": "cpp",
         "*.rh": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "fstream": "cpp"
     },
     "cSpell.words": [
         "EQUIPABLE",
