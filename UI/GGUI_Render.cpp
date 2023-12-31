@@ -13,6 +13,9 @@ std::unordered_map<PAGE_VIEW, std::function<void(bool)>> Pages;
 
 PAGE_VIEW Current_Page = PAGE_VIEW::MENU;
 
+List_View* Menu_Screen;
+Element* Campaign;
+
 void Activate_Page(PAGE_VIEW activate){
     GGUI::Pause_Renderer([=](){
         for (auto& p : Pages){
@@ -25,12 +28,12 @@ void Activate_Page(PAGE_VIEW activate){
 
 void Init_Menu_Screen(){
 
-    List_View* Menu_Screen = new List_View(
+    Menu_Screen = new List_View(
         GGUI::Main,
         {
-            new Button("Campaign", [](Button* self){ Activate_Page(PAGE_VIEW::CAMPAIGN); }),
-            new Button("Options", [](Button* self){ Activate_Page(PAGE_VIEW::OPTIONS); }),
-            new Button("Exit", [](Button* self){ GGUI::Exit(); }),
+            new Button("Campaign", [=](Button* self){ Activate_Page(PAGE_VIEW::CAMPAIGN); }),
+            new Button("Options", [=](Button* self){ Activate_Page(PAGE_VIEW::OPTIONS); }),
+            new Button("Exit", [=](Button* self){ GGUI::Exit(); }),
         },
         Grow_Direction::COLUMN
     );
@@ -41,12 +44,12 @@ void Init_Menu_Screen(){
 
     Menu_Screen->Set_Position({Centered_Width - Menu_Screen->Get_Width(), Centered_Height - Menu_Screen->Get_Height()});
 
-    Pages[PAGE_VIEW::MENU] = [=](bool b){Menu_Screen->Show_Border(b);};
+    Pages[PAGE_VIEW::MENU] = [=](bool b){Menu_Screen->Display(b);};
 }
 
 void Init_Campaign(){
 
-    Element* Campaign = new Element(
+    Campaign = new Element(
         Main->Get_Width(),
         Main->Get_Height()
     );
@@ -69,7 +72,9 @@ void Init_Campaign(){
         },
         Grow_Direction::COLUMN
     );
-    Inspect->Set_Position({Main->Get_Width() - Inspect_Tool_Width, Bar_Height});
+    Inspect->Set_Position({Main->Get_Width() - Inspect_Tool_Width, 0});
+    Inspect->Set_Dimensions(Inspect_Tool_Width, Inspect_Tool_height - Bar_Height);
+    Inspect->Show_Border(true);
 
     List_View* Bar = new List_View(
         Campaign,
