@@ -75,7 +75,10 @@ void Init_Campaign(){
         Campaign,
         {
             new Button("Menu", [=](Button*){ Activate_Page(PAGE_VIEW::MENU); }),
-            new Button("Inventory", [=](Button*){ Inspect->Add_Child(Display_Inventory(GLOBALS::Focus)); })
+            new Button("Inventory", [=](Button*){ 
+                if (GLOBALS::Focus)
+                    Inspect->Add_Child(Display_Inventory(GLOBALS::Focus)); 
+            })
         }
     );
     Bar->Set_Position({0, map->Get_Height()});
