@@ -111,6 +111,12 @@ void Init_Campaign(){
     Render_Stream.detach();
 }
 
+void Init_Controls(){
+
+    
+
+}
+
 Element* Display_Object(Entity* e){
 
 

@@ -9,6 +9,10 @@
 
 using namespace std;
 
+namespace GGUI{
+    class RGB;
+}
+
 namespace MAP{
 
     class Tile{
@@ -38,7 +42,11 @@ namespace MAP{
 
     extern vector<Tile*> Get_Surrounding_Content(IVector3 position, int Distance = 1);
 
-    FVector3 Get_Relative_Position_To_Camera(Location position);
+    extern FVector3 Get_Relative_Position_To_Camera(Location position);
+
+    extern GGUI::RGB Get_Tint(float Elevation, float Humidity, float Temperature);
+
+    extern constexpr void Init_Tint_Map();
 }
 
 #endif

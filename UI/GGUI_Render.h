@@ -24,8 +24,11 @@ extern void Init_Menu_Screen();
 
 extern void Init_Campaign();
 
+extern void Init_Controls();
+
 extern GGUI::Element* Display_Object(class Entity* e);
 
 extern GGUI::Element* Display_Inventory(class Entity* e);
+
 
 #endif

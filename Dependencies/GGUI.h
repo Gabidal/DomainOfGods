@@ -294,13 +294,13 @@ namespace GGUI{
             unsigned char B;
         };
 
-        RGB(unsigned char r, unsigned char g, unsigned char b){
+        constexpr RGB(unsigned char r, unsigned char g, unsigned char b){
             R = r;
             G = g;
             B = b;
         }
 
-        RGB(){}
+        constexpr RGB(){}
 
         std::string Get_Colour() const{
             return std::to_string(Red) + Constants::SEPERATE + std::to_string(Green) + Constants::SEPERATE + std::to_string(Blue);

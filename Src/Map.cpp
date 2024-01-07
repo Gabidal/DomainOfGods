@@ -7,6 +7,7 @@
 #include "Chaos.h"
 #include "./UI/Models.h"
 
+#include "../Dependencies/GGUI.h"
 
 using namespace TerGen; 
 
@@ -16,6 +17,8 @@ namespace MAP{
     TerGen::Generator* Elevation_Generator;
     TerGen::Generator* Humidity_Generator;
     TerGen::Generator* Temperature_Generator;
+
+    GGUI::RGB TINT_MAP[UCHAR_MAX * UCHAR_MAX * UCHAR_MAX] = {};
 
     vector<Tile*> Get_Chunk_Content(IVector3 position){
         return Tiles[position].Content;
@@ -145,6 +148,32 @@ namespace MAP{
             Make_Map();
             Save_Map("Default.sv");
         }
+    }
+
+    GGUI::RGB Get_Tint(float Elevation, float Humidity, float Temperature){
+
+
+
+    }
+
+    constexpr void Init_Tint_Map(){
+        // Order of accessors: Width = Humidity, Depth = Temperature, Height = Elevation
+        GGUI::RGB Lerp_Seeds[UCHAR_MAX] = {};
+        int Current_Lerp_Seed_Index = 0;
+
+        for (unsigned char Humidity = 0; Humidity < UCHAR_MAX; Humidity++){
+            for (unsigned char Temperature = 0; Temperature < UCHAR_MAX; Temperature++){
+                for (unsigned char Elevation = 0; Elevation < UCHAR_MAX; Elevation++){
+                    
+                    // When its dry and hot its yellow, elevation wont affect
+                    
+
+
+                    
+                }
+            }
+        }
+
     }
 
 }
