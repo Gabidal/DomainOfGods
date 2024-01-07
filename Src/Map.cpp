@@ -9,6 +9,9 @@
 
 #include "../Dependencies/GGUI.h"
 
+#include <cmath>
+#include <numeric>
+
 using namespace TerGen; 
 
 namespace MAP{
@@ -77,9 +80,44 @@ namespace MAP{
     }
 
     void Init_TerGen(){
-        Elevation_Generator = new TerGen::Generator();
-        Humidity_Generator = new TerGen::Generator();
-        Temperature_Generator = new TerGen::Generator();
+
+        double FREQ = 0.001;
+        double AMP = 0.01;
+        double LAC = 4.0;
+        double PERS = 0.5;
+        double SED = 1.0;
+        double FMB_OCT = 4.0;
+        double WARP_OCT = 2.0;
+
+        Elevation_Generator = new TerGen::Generator(
+            FREQ,
+            AMP,
+            LAC,
+            PERS,
+            SED,
+            FMB_OCT,
+            WARP_OCT
+        );
+
+        Humidity_Generator = new TerGen::Generator(
+            FREQ * 10,
+            AMP,
+            LAC * 0.1,
+            PERS * 0.5,
+            SED,
+            FMB_OCT,
+            WARP_OCT
+        );
+
+        Temperature_Generator = new TerGen::Generator(
+            FREQ * 10,
+            AMP,
+            LAC * 0.1,
+            PERS * 0.5,
+            SED,
+            FMB_OCT,
+            WARP_OCT
+        );
     }
 
     void Save_Map([[maybe_unused]] string file){
@@ -91,6 +129,11 @@ namespace MAP{
 
         return false;
 
+    }
+
+    double Sigmoid(double x)
+    {
+        return 1.0 / (1.0 + std::exp(-x));
     }
 
     void Make_Map(){
@@ -122,6 +165,14 @@ namespace MAP{
                     // set the texture
                     Current_Tile->ID = Texture;
 
+                    // Make sure the Elevation, Humidity and Temperature are at most, 1, and at least -1. But not clamping with minmax.
+                    // Use logaritm to make the values more interesting.
+                    Elevation = Sigmoid(Elevation);
+                    Humidity = Sigmoid(Humidity);
+                    Temperature = Sigmoid(Temperature);
+
+                    Current_Tile->Elevation = Elevation;
+
                     // set the humidity
                     Current_Tile->Humidity = Humidity;
 
@@ -141,6 +192,7 @@ namespace MAP{
     // Inits everything related to TerGen and saves
     void Init(){
         Init_TerGen();
+        Init_Tint_Map();
 
         // if there is no previus run made, make a new world
         if (!Load_Map("Default.sv")){
@@ -151,25 +203,64 @@ namespace MAP{
     }
 
     GGUI::RGB Get_Tint(float Elevation, float Humidity, float Temperature){
+        // transform the floats into a unsigned chars, 
+        // so we can use them as indexes for the tint map.
+        unsigned char Elevation_Index = (unsigned char)(Elevation * UCHAR_MAX);
+        unsigned char Humidity_Index = (unsigned char)(Humidity * UCHAR_MAX);
+        unsigned char Temperature_Index = (unsigned char)(Temperature * UCHAR_MAX);
 
+        // get the tint from the tint map
+        return TINT_MAP[Temperature_Index * UCHAR_MAX * UCHAR_MAX + Elevation_Index * UCHAR_MAX + Humidity_Index];
+    }
 
+    constexpr void Apply_Tint(GGUI::RGB& A, GGUI::RGB B, float Alpha){
+        A.R = (unsigned char)(A.R * (1 - Alpha) + B.R * Alpha);
+        A.G = (unsigned char)(A.G * (1 - Alpha) + B.G * Alpha);
+        A.B = (unsigned char)(A.B * (1 - Alpha) + B.B * Alpha);
+    }
 
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, unsigned char Distance){
+        GGUI::RGB Result;
+
+        Result.R = MAP::lerp<float>(A.R, B.R, (float)Distance / 255);
+        Result.G = MAP::lerp<float>(A.G, B.G, (float)Distance / 255);
+        Result.B = MAP::lerp<float>(A.B, B.B, (float)Distance / 255);
+
+        return Result;
     }
 
     constexpr void Init_Tint_Map(){
-        // Order of accessors: Width = Humidity, Depth = Temperature, Height = Elevation
-        GGUI::RGB Lerp_Seeds[UCHAR_MAX] = {};
-        int Current_Lerp_Seed_Index = 0;
+        // Order of accessors: Width/X = Humidity, Height/Y = Elevation, Depth/Z = Temperature
 
-        for (unsigned char Humidity = 0; Humidity < UCHAR_MAX; Humidity++){
-            for (unsigned char Temperature = 0; Temperature < UCHAR_MAX; Temperature++){
-                for (unsigned char Elevation = 0; Elevation < UCHAR_MAX; Elevation++){
-                    
-                    // When its dry and hot its yellow, elevation wont affect
-                    
+        // MAPPINGS:
+        /*
+        
+            Temperature Gradient, where Temperature 0 = RGB(0, 0, 0) and Temperature 255 = RGB(255, 255, 255)
+            This means a plane at X&Y plane, {0-255, 0-255, 0} is black and {0-255, 0-255, 255} is white.
+        
+            Humidity Gradient, where Humidity 0 = RGB(0, 255, 255) and Humidity 255 = RGB(0, 0, 255)
+            This means a plane at Y&Z plane, {0, 0-255, 0-255} is yellow and {255, 0-255, 0-255} is blue.
 
+        */
 
-                    
+       float Alpha = 0.4;   // Each tint can only contribute 10% to the tint map.
+
+        for (unsigned char Temperature = 0; Temperature < UCHAR_MAX; Temperature++){
+            for (unsigned char Elevation = 0; Elevation < UCHAR_MAX; Elevation++){
+                for (unsigned char Humidity = 0; Humidity < UCHAR_MAX; Humidity++){
+                    GGUI::RGB Current_Tint;
+
+                    // Apply the Temperature Tint.
+                    // Since the temperature is already the gradient from 0-255 we dont need to calculate anything.
+                    GGUI::RGB Temperature_Tint = {Temperature, Temperature, Temperature};
+                    Apply_Tint(Current_Tint, Temperature_Tint, Alpha);
+
+                    // Apply the Humidity Tint.
+                    // We need to lerp between the yellow and blue colors.
+                    GGUI::RGB Humidity_Tint = Lerp({0, 0, 255}, {0, 255, 255}, Humidity);
+                    Apply_Tint(Current_Tint, Humidity_Tint, Alpha);
+
+                    Apply_Tint(TINT_MAP[Temperature * UCHAR_MAX * UCHAR_MAX + Elevation * UCHAR_MAX + Humidity], Current_Tint, Alpha);
                 }
             }
         }

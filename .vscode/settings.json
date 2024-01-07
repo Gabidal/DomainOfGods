@@ -69,7 +69,8 @@
         "xtree": "cpp",
         "*.rh": "cpp",
         "random": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "numeric": "cpp"
     },
     "cSpell.words": [
         "EQUIPABLE",

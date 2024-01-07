@@ -21,7 +21,8 @@ namespace MAP{
         // HIGH coordination for detailed chunk mapping inside other tiles. 
         Location Position;
 
-        int ID = 0; // Also used as elevation information.
+        int ID = 0;
+        float Elevation = 0.0f;
         float Humidity = 0.0f;
         float Temperature = 0.0f;
 
@@ -47,6 +48,13 @@ namespace MAP{
     extern GGUI::RGB Get_Tint(float Elevation, float Humidity, float Temperature);
 
     extern constexpr void Init_Tint_Map();
+
+    // Linear interpolation function
+    template<typename T>
+    constexpr T lerp(T a, T b, T t) {
+        // Clamp t between a and b
+        return a + t * (b - a);
+    }
 }
 
 #endif

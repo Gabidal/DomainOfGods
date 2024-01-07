@@ -10,40 +10,56 @@ void Init_Models(){
 
         {MODEL_TYPE::TILE, {
             // SEA and RIVERS
+            " ",         // EMPTY
             "@",         // SEA     // Vortex
             " ",         // SEA-2
             " ",         // SEA-3
             "~",         // WAVE
+            " ",         // EMPTY
             "~",         // WAVE-2
-            // "≈",         // WAVE-3
-            // "≋",         // WAVE-4
-            // "≌",         // WAVE-5
+            " ",         // EMPTY
+            "≈",         // WAVE-3
+            " ",         // EMPTY
+            "≋",         // WAVE-4
+            " ",         // EMPTY
 
             // BEACH
             " ",         // SAND
+            " ",         // SAND
             ".",         // SAND-2
+            " ",         // EMPTY
             ":",         // SAND-3
+            " ",         // EMPTY
             ";",         // SAND-4
-            // "°",         // SAND-5
-            // "•",         // SAND-6
-            // "⁰",         // SAND-7
-            // "⁴",         // SAND-8
+            " ",         // EMPTY
+            "°",         // SAND-5
+            " ",         // EMPTY
+            "•",         // SAND-6
+            " ",         // EMPTY
+            "⁰",         // SAND-7
 
             // PLAINS
             " ",         // GRASS
             ",",         // GRASS-2
+            " ",         // EMPTY
             "\'",        // GRASS-3
+            " ",         // EMPTY
             "\"",         // GRASS-4
-            // "`",         // GRASS-5
-            // "¨",         // GRASS-6
+            " ",         // EMPTY
+            "`",         // GRASS-5
+            " ",         // EMPTY
+            "¨",         // GRASS-6
             
             // HILLS
             " ",         // HILL
             " ",         // HILL-2
             " ",         // HILL-3
             "^",         // HILL-4
+            " ",         // EMPTY
             "V",         // HILL-5
+            " ",         // EMPTY
             "<",         // HILL-6
+            " ",         // EMPTY
             ">",         // HILL-7
             // "∧",         // HILL-8
             // "∠",         // HILL-10
@@ -52,8 +68,11 @@ void Init_Models(){
             // MOUNTAINS
             " ",         // MOUNTAIN
             "m",         // MOUNTAIN-2
+            " ",         // EMPTY
             "w",         // MOUNTAIN-3
+            " ",         // EMPTY
             "M",         // MOUNTAIN-4
+            " ",         // EMPTY
             "W",         // MOUNTAIN-5
             // "∩",         // MOUNTAIN-6
             // "∴",         // MOUNTAIN-8
@@ -62,6 +81,7 @@ void Init_Models(){
             // SNOW
             " ",         // SNOW
             "*",         // SNOW-2
+            " ",         // EMPTY
             "+",         // SNOW-3
             //"⁂",         // SNOW-5
             // "⁑",         // SNOW-7
@@ -80,40 +100,12 @@ int Normalize_Float_To_Model_Index(float Elevation, MODEL_TYPE type){
     return Offset_Y;
 }
 
-// Linear interpolation function
-float lerp(float a, float b, float t) {
-    return a + t * (b - a);
-}
-
 GGUI::Sprite Render_Tile(MAP::Tile* t) {
     GGUI::Sprite Result;
 
     Result.Texture.Set_Text(Models[MODEL_TYPE::TILE][t->ID]);
 
-    // Define colors for different biomes
-    GGUI::RGB oceanColor = {0, 0, 255};     // Blue for oceans
-    GGUI::RGB lushColor = {0, 255, 0};      // Green for lush plains
-    GGUI::RGB desertColor = {255, 255, 0};  // Yellow for hot deserts
-    GGUI::RGB snowColor = {255, 255, 255};  // White for cold and wet
-    GGUI::RGB mountainColor = {128, 128, 128};  // Gray for cold and dry
-
-    // Humidity and temperature values
-    float humidity = std::min(t->Humidity, 1.0f);        // Ensure humidity is between 0 and 1
-    float temperature = std::min(t->Temperature, 1.0f);  // Ensure temperature is between 0 and 1
-
-    // Adjust sensitivity by multiplying humidity and temperature with a factor
-    float sensitivityFactor = 5.0f;  // Adjust this factor to control sensitivity
-    humidity *= sensitivityFactor;
-    temperature *= sensitivityFactor;
-
-    // Interpolate between colors based on humidity and temperature
-    GGUI::RGB interpolatedColor = {
-        static_cast<unsigned char>(lerp(oceanColor.R, lushColor.R, humidity) * lerp(snowColor.R, mountainColor.R, temperature)),
-        static_cast<unsigned char>(lerp(oceanColor.G, lushColor.G, humidity) * lerp(snowColor.G, mountainColor.G, temperature)),
-        static_cast<unsigned char>(lerp(oceanColor.B, lushColor.B, humidity) * lerp(snowColor.B, mountainColor.B, temperature))
-    };
-
-    Result.Background_Color = interpolatedColor;
+    Result.Background_Color = MAP::Get_Tint(t->Elevation, t->Humidity, t->Temperature);
 
     return Result;
 }
