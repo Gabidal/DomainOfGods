@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <string>
 
+#include "../UI/Models.h"
+
 using namespace std;
 
 namespace GGUI{
@@ -27,6 +29,9 @@ namespace MAP{
         float Temperature = 0.0f;
 
         vector<Tile*> Content;
+
+        // Each tile can hold upto 1 particle.
+        Particle Effect;
 
         Tile() = default;
         Tile(Location position);
@@ -49,11 +54,23 @@ namespace MAP{
 
     extern constexpr void Init_Tint_Map();
 
+    extern Particle Generate_Particle(float Elevation, float Humidity, float Temperature);
+
     // Linear interpolation function
     template<typename T>
     constexpr T lerp(T a, T b, T t) {
         // Clamp t between a and b
         return a + t * (b - a);
+    }
+
+    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, unsigned char Distance, int Domain_Size = UCHAR_MAX){
+        GGUI::RGB Result;
+
+        Result.R = MAP::lerp<float>(A.R, B.R, (float)Distance / (float)Domain_Size);
+        Result.G = MAP::lerp<float>(A.G, B.G, (float)Distance / (float)Domain_Size);
+        Result.B = MAP::lerp<float>(A.B, B.B, (float)Distance / (float)Domain_Size);
+
+        return Result;
     }
 }
 

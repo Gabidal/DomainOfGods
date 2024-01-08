@@ -5,19 +5,12 @@
 
 namespace CHAOS{
 
-    inline unordered_map<IVector3, vector<Entity*>, IVector3> Entity_Chunks;
+    unordered_map<IVector3, vector<Entity*>, IVector3> Entity_Chunks;
+
     inline TerGen::Generator* Entity_Generator;
 
     void Init(){
         Entity_Generator = new TerGen::Generator();
-    }
-
-    int Normalize_Entity_Elevation(float Y) {
-        int Normalized_Y = (abs(Y) * (int)Models[MODEL_TYPE::ENTITY].size());
-
-        int Offset_Y = (Normalized_Y % (int)Models[MODEL_TYPE::ENTITY].size());
-
-        return Offset_Y;
     }
 
     vector<Entity*> Get_Chunk_Content(IVector3 position){

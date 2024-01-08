@@ -12,6 +12,8 @@ using namespace std;
 
 namespace CHAOS{
 
+    extern unordered_map<IVector3, vector<Entity*>, IVector3> Entity_Chunks;
+
     extern vector<Entity*> Get_Chunk_Content(IVector3 position);
 
     extern vector<Entity*> Get_Surrounding_Content(IVector3 position);

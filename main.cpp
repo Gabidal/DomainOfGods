@@ -32,16 +32,19 @@ int main(){
 
         thread Entity_Stream = thread([=](){
             while(true){
+                std::this_thread::sleep_for(std::chrono::milliseconds((int)GLOBALS::TICK_LENGTH));
+
                 if (Current_Page != PAGE_VIEW::CAMPAIGN || (Stop_Stream || Stream_Is_Active))
                     continue;
 
                 CHAOS::Tick();
-                std::this_thread::sleep_for(std::chrono::milliseconds((int)GLOBALS::TICK_LENGTH));
             }
         });
 
         thread Physics_Stream = thread([=](){
             while(true){
+                std::this_thread::sleep_for(std::chrono::milliseconds((int)GLOBALS::TICK_LENGTH));
+
                 if (Current_Page != PAGE_VIEW::CAMPAIGN || Stop_Stream)
                     continue;
 
@@ -50,24 +53,19 @@ int main(){
                 CHAOS::Apply_Physics();
 
                 Stream_Is_Active = false;
-                std::this_thread::sleep_for(std::chrono::milliseconds((int)GLOBALS::TICK_LENGTH));
             }
         });
 
         Entity_Stream.detach();
         Physics_Stream.detach();
     });
-
-    // while(true){
-    //     Stop_Stream = true;
-    //     if (Stream_Is_Active)
-    //         continue;
-    //     RENDER::Update_Frame();
-    //     Stop_Stream = false;
-    //     std::this_thread::sleep_for(std::chrono::milliseconds((int)GLOBALS::TICK_LENGTH));
-    // }
-    // RENDER::Close();
     
+    Entity* Player = new Entity({{(float)0, (float)0, 1}, {0, 0, 0}}, ENTITY_TYPE::ENTITY);
+
+    CHAOS::Entity_Chunks[IVector3()] = {Player};
+
+    GLOBALS::Focus = Player;
+
     while (true){}
 
     return 0;    

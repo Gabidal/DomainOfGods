@@ -7,6 +7,8 @@
 #include "../Dependencies/GGUI.h"
 #include "./Models.h"
 
+#include <functional>
+
 using namespace GGUI; 
 
 std::unordered_map<PAGE_VIEW, std::function<void(bool)>> Pages;
@@ -47,6 +49,25 @@ void Init_Menu_Screen(){
     Pages[PAGE_VIEW::MENU] = [=](bool b){Menu_Screen->Display(b);};
 }
 
+void Add_Keybind(GGUI::Element* host, char Char, std::function<bool (GGUI::Event*)> action){
+    Action* a = new Action(
+    Constants::KEY_PRESS,
+    [=](GGUI::Event* e){
+        if (((GGUI::Input*)e)->Data != Char)
+            return false;
+        
+        GGUI::Action* wrapper = new GGUI::Action(e->Criteria, action, host);
+
+        action(wrapper);
+
+        //action succesfully executed.
+        return true;
+    },
+    host
+);
+GGUI::Event_Handlers.push_back(a);
+}
+
 void Init_Campaign(){
 
     Campaign = new Element(
@@ -64,6 +85,30 @@ void Init_Campaign(){
         Main->Get_Width() - Inspect_Tool_Width, Main->Get_Height() - Bar_Height,
         {0, 0}
     );
+
+    Add_Keybind(map, 'w', [=](GGUI::Event* e){
+        GLOBALS::CAMERA.HIGH.Y -= 1;
+
+        return true;
+    });
+
+    Add_Keybind(map, 'a', [=](GGUI::Event* e){
+        GLOBALS::CAMERA.HIGH.X -= 1;
+
+        return true;
+    });
+
+    Add_Keybind(map, 's', [=](GGUI::Event* e){
+        GLOBALS::CAMERA.HIGH.Y += 1;
+
+        return true;
+    });
+
+    Add_Keybind(map, 'd', [=](GGUI::Event* e){
+        GLOBALS::CAMERA.HIGH.X += 1;
+
+        return true;
+    });
 
     List_View* Inspect = new List_View(
         Campaign,
@@ -98,13 +143,18 @@ void Init_Campaign(){
     Main->Add_Child(Campaign);
 
     thread Render_Stream = thread([=](){
+        unsigned char ANIMATION_FRAME = 0;
+
         while(true){
             std::this_thread::sleep_for(std::chrono::milliseconds((int)GLOBALS::TICK_LENGTH));
 
             if (Current_Page != PAGE_VIEW::CAMPAIGN)
                 continue;
 
-            Update_Map(map);
+            Update_Map(map, ANIMATION_FRAME);
+
+            // Calculate the next frame and cycle through the frame count.
+            ANIMATION_FRAME = ANIMATION_FRAME + 1;
         }
     });
 

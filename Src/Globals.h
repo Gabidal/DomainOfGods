@@ -4,6 +4,7 @@
 #include "../Dependencies/TerGen.h"
 
 class IVector3;
+class Location;
 
 namespace GLOBALS{
 
@@ -19,14 +20,14 @@ namespace GLOBALS{
     extern const int RENDER_DISTANCE_WIDTH;
     extern const int RENDER_DISTANCE_HEIGHT;
 
-    extern const float ENTITY_DENSITY;
+    extern const double ENTITY_DENSITY;
     extern const float MAX_LUCK_PERCENTAGE;
 
     extern const int CHUNK_WIDTH;
     extern const int CHUNK_HEIGHT;
     extern const int CHUNK_DEPTH;
 
-    extern IVector3 CAMERA;
+    extern Location CAMERA;
     extern const int WINDOW_WIDTH;
     extern const int WINDOW_HEIGHT;
 
@@ -35,6 +36,8 @@ namespace GLOBALS{
     extern const float TICK_DELTA;
 
     extern class Entity* Focus;
+
+    extern const unsigned char ANIMATION_FRAME_COUNT;
 }
 
 #endif

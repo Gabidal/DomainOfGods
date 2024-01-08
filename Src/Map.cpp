@@ -37,8 +37,8 @@ namespace MAP{
         int Chunk_Position_Y = position.CHUNK.Y * GLOBALS::CHUNK_HEIGHT * Tile_Height;
         int Chunk_Position_X = position.CHUNK.X * GLOBALS::CHUNK_WIDTH * Tile_Width;
 
-        int Camera_Position_Y = GLOBALS::CAMERA.Y * GLOBALS::CHUNK_HEIGHT * Tile_Height;
-        int Camera_Position_X = GLOBALS::CAMERA.X * GLOBALS::CHUNK_WIDTH * Tile_Width;
+        int Camera_Position_Y = GLOBALS::CAMERA.CHUNK.Y * GLOBALS::CHUNK_HEIGHT + GLOBALS::CAMERA.HIGH.Y * Tile_Height;
+        int Camera_Position_X = GLOBALS::CAMERA.CHUNK.X * GLOBALS::CHUNK_WIDTH + GLOBALS::CAMERA.HIGH.X * Tile_Width;
 
         float Relative_Y = Tile_Position_Y + Chunk_Position_Y - Camera_Position_Y;
         float Relative_X = Tile_Position_X + Chunk_Position_X - Camera_Position_X;
@@ -46,13 +46,9 @@ namespace MAP{
         return FVector3{Relative_X, Relative_Y, 0.f};
     }
 
-    Tile::Tile(Location position){
+    Tile::Tile(Location position) : Effect(position){
         Position = position;
         ID = 0;
-    }
-
-    int Normalize_Tile_Elevation(float Y) {
-        return Normalize_Float_To_Model_Index(Y, MODEL_TYPE::TILE);
     }
 
     vector<Tile*> Get_Surrounding_Content(IVector3 position){
@@ -138,7 +134,7 @@ namespace MAP{
 
     void Make_Map(){
         // generate for the few chunks up ahead.
-        for (auto pos : CHAOS::Get_Surrounding_Positions(GLOBALS::CAMERA, 5)){
+        for (auto pos : CHAOS::Get_Surrounding_Positions(GLOBALS::CAMERA.CHUNK, 5)){
             Tile* Current_Chunk = new Tile({{}, pos});
 
             for (int Y = 0; Y < GLOBALS::CHUNK_HEIGHT; Y++){
@@ -159,12 +155,6 @@ namespace MAP{
                     // get the temperature from the generator
                     float Temperature = TerGen::Warp_Noise({Global_X, Global_Y}, Temperature_Generator);
 
-                    // get the texture from the generator
-                    int Texture = Normalize_Tile_Elevation(Elevation);
-
-                    // set the texture
-                    Current_Tile->ID = Texture;
-
                     // Make sure the Elevation, Humidity and Temperature are at most, 1, and at least -1. But not clamping with minmax.
                     // Use logaritm to make the values more interesting.
                     Elevation = Sigmoid(Elevation);
@@ -179,6 +169,8 @@ namespace MAP{
                     // set the temperature
                     Current_Tile->Temperature = Temperature;
 
+                    Current_Tile->Effect = Generate_Particle(Elevation, Humidity, Temperature);
+
                     // add the tile to the chunk
                     Current_Chunk->Content.push_back(Current_Tile);
                 }
@@ -187,6 +179,12 @@ namespace MAP{
             // add the chunk to the map
             Tiles[pos] = *Current_Chunk;
         }
+    }
+
+    Particle Generate_Particle(float Elevation, float Humidity, float Temperature){
+
+
+
     }
 
     // Inits everything related to TerGen and saves
@@ -219,16 +217,6 @@ namespace MAP{
         A.B = (unsigned char)(A.B * (1 - Alpha) + B.B * Alpha);
     }
 
-    constexpr GGUI::RGB Lerp(GGUI::RGB A, GGUI::RGB B, unsigned char Distance){
-        GGUI::RGB Result;
-
-        Result.R = MAP::lerp<float>(A.R, B.R, (float)Distance / 255);
-        Result.G = MAP::lerp<float>(A.G, B.G, (float)Distance / 255);
-        Result.B = MAP::lerp<float>(A.B, B.B, (float)Distance / 255);
-
-        return Result;
-    }
-
     constexpr void Init_Tint_Map(){
         // Order of accessors: Width/X = Humidity, Height/Y = Elevation, Depth/Z = Temperature
 
@@ -243,7 +231,7 @@ namespace MAP{
 
         */
 
-       float Alpha = 0.4;   // Each tint can only contribute 10% to the tint map.
+       float Alpha = 0.7;   // Each tint can only contribute 10% to the tint map.
 
         for (unsigned char Temperature = 0; Temperature < UCHAR_MAX; Temperature++){
             for (unsigned char Elevation = 0; Elevation < UCHAR_MAX; Elevation++){

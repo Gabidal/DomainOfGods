@@ -1448,7 +1448,7 @@ namespace GGUI{
         RGB Foreground_Color;
         UTF Texture;
 
-        Sprite(UTF t = UTF(" "), RGB b = COLOR::BLACK, RGB f = COLOR::WHITE) : Texture(t), Background_Color(b), Foreground_Color(f){}
+        Sprite(UTF t = UTF(" "), RGB f = COLOR::WHITE, RGB b = COLOR::BLACK) : Texture(t), Foreground_Color(f), Background_Color(b){}
 
         UTF Render();
     };
