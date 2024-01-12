@@ -37,6 +37,10 @@ namespace MAP{
         Tile(Location position);
     };
 
+    extern double Sigmoid(double x);
+
+    extern TerGen::Generator* Particle_Generator;
+
     extern unordered_map<IVector3, Tile, IVector3> Tiles;
 
     extern void Init_TerGen();
@@ -54,7 +58,11 @@ namespace MAP{
 
     extern constexpr void Init_Tint_Map();
 
-    extern Particle Generate_Particle(float Elevation, float Humidity, float Temperature);
+    extern constexpr void Init_Biome_Map();
+
+    extern const std::array<FVector3, 3> Get_Equilateral_Vectors();
+
+    extern Particle Generate_Particle(float Elevation, float Humidity, float Temperature, Location position);
 
     // Linear interpolation function
     template<typename T>

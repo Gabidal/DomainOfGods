@@ -42,5 +42,11 @@ namespace GLOBALS{
     Entity* Focus = nullptr;
 
     const unsigned char ANIMATION_FRAME_COUNT = 255;
+
+    float Tint_Alpha = 0.75;   // Each tint can only contribute 25% to the tint map.
+
+    float Biome_Alpha = 0.75; 
+
+    const double PI = 3.14159265358979323846;
 }
 

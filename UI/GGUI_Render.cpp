@@ -93,7 +93,7 @@ void Init_Campaign(){
     });
 
     Add_Keybind(map, 'a', [=](GGUI::Event* e){
-        GLOBALS::CAMERA.HIGH.X -= 1;
+        GLOBALS::CAMERA.HIGH.X -= 2;
 
         return true;
     });
@@ -105,7 +105,7 @@ void Init_Campaign(){
     });
 
     Add_Keybind(map, 'd', [=](GGUI::Event* e){
-        GLOBALS::CAMERA.HIGH.X += 1;
+        GLOBALS::CAMERA.HIGH.X += 2;
 
         return true;
     });

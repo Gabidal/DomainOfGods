@@ -70,7 +70,8 @@
         "*.rh": "cpp",
         "random": "cpp",
         "fstream": "cpp",
-        "numeric": "cpp"
+        "numeric": "cpp",
+        "array": "cpp"
     },
     "cSpell.words": [
         "EQUIPABLE",

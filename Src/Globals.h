@@ -38,6 +38,12 @@ namespace GLOBALS{
     extern class Entity* Focus;
 
     extern const unsigned char ANIMATION_FRAME_COUNT;
+
+    extern float Tint_Alpha;
+
+    extern float Biome_Alpha;
+
+    extern const double PI;
 }
 
 #endif

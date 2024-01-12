@@ -18,6 +18,22 @@ void Init_Models(){
                     GGUI::Sprite(GGUI::UTF("~"), GGUI::COLOR::BLUE),
                 }),
             }
+        },
+
+        {
+            "FIRE",
+            {
+                Model({
+                    GGUI::Sprite(GGUI::UTF("*"), GGUI::COLOR::LIGHT_YELLOW),
+                    GGUI::Sprite(GGUI::UTF("*"), GGUI::COLOR::YELLOW),
+                    GGUI::Sprite(GGUI::UTF("*"), GGUI::COLOR::YELLOW + GGUI::COLOR::RED),
+                    GGUI::Sprite(GGUI::UTF("*"), GGUI::COLOR::RED),
+                    GGUI::Sprite(GGUI::UTF("^"), GGUI::COLOR::LIGHT_RED),
+                    GGUI::Sprite(GGUI::UTF("#"), GGUI::COLOR::GRAY),
+                },
+                6.0f
+                ),
+            }
         }
     };
 }
@@ -32,10 +48,22 @@ GGUI::RGB Render_Tile(MAP::Tile* t) {
     return MAP::Get_Tint(t->Elevation, t->Humidity, t->Temperature);
 }
 
+GGUI::Sprite Render_Particle(MAP::Tile* t, unsigned char Animation_Frame){
+    GGUI::Sprite Result = Interpolate_Animation_Frame(
+        t->Effect.Get_Texture(),
+        Animation_Frame + t->Effect.Get_Animation_Frame_Offset()
+    );
+
+    return Result;
+}
+
 GGUI::Sprite Interpolate_Animation_Frame(Model m, unsigned char Animation_Frame){
     int Frame_Count = m.Frames.size();
 
     const int Frame_Distance = GLOBALS::ANIMATION_FRAME_COUNT / Frame_Count + 1;    // Add 1, because 256 overflows back to zero, and we need detailed distance.
+
+    // Apply the speed modifier 
+    Animation_Frame = Animation_Frame * m.Speed;
 
     // now check where the current animation frame lies in between two animation frames.
     int Frame_Below = Animation_Frame / Frame_Distance;
@@ -118,6 +146,13 @@ void Update_Map(GGUI::Terminal_Canvas* tc, unsigned char Animation_Frame){
 
             s.Foreground_Color = tmp.Foreground_Color;
             s.Texture = tmp.Texture;
+        }
+        else if (!tile->Effect.Is_Empty()){
+            // if there isn't a entity here, then try to check if there is a effect to be rendered.
+            GGUI::Sprite tmp = Render_Particle(tile, Animation_Frame);
+
+            s.Foreground_Color = tmp.Foreground_Color;
+            s.Texture = tmp.Texture;   
         }
 
         // if it does, draw it.

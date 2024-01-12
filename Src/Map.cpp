@@ -11,6 +11,8 @@
 
 #include <cmath>
 #include <numeric>
+#include <array>
+#include <float.h>
 
 using namespace TerGen; 
 
@@ -20,11 +22,68 @@ namespace MAP{
     TerGen::Generator* Elevation_Generator;
     TerGen::Generator* Humidity_Generator;
     TerGen::Generator* Temperature_Generator;
+    TerGen::Generator* Particle_Generator;
 
     GGUI::RGB TINT_MAP[UCHAR_MAX * UCHAR_MAX * UCHAR_MAX] = {};
 
+    GGUI::RGB BIOME_MAP[UCHAR_MAX * UCHAR_MAX * UCHAR_MAX] = {};
+
+    double Sigmoid(double x)
+    {
+        return 1.0 / (1.0 + std::exp(-x));
+    }
+
     vector<Tile*> Get_Chunk_Content(IVector3 position){
-        return Tiles[position].Content;
+        // check if the chunk exists
+        if (Tiles.find(position) != Tiles.end())
+            return Tiles[position].Content;
+
+        // generate new chunk now that we know that the queried chunk doesn't exists
+        Tile* Current_Chunk = new Tile({{}, position});
+    
+        for (int Y = 0; Y < GLOBALS::CHUNK_HEIGHT; Y++){
+            for (int X = 0; X < GLOBALS::CHUNK_WIDTH; X++){
+                // get the tile from the generator
+                Tile* Current_Tile = new Tile({{(float)X, (float)Y, 0}, position});
+
+                // global positions
+                int Global_Y = Y + position.Y * GLOBALS::CHUNK_HEIGHT;
+                int Global_X = X + position.X * GLOBALS::CHUNK_WIDTH;
+
+                // get the elevation from the generator
+                float Elevation = TerGen::Warp_Noise({Global_X, Global_Y}, Elevation_Generator);
+                
+                // get the humidity from the generator
+                float Humidity = TerGen::Warp_Noise({Global_X, Global_Y}, Humidity_Generator);
+
+                // get the temperature from the generator
+                float Temperature = TerGen::Warp_Noise({Global_X, Global_Y}, Temperature_Generator);
+
+                // Make sure the Elevation, Humidity and Temperature are at most, 1, and at least -1. But not clamping with minmax.
+                // Use logaritm to make the values more interesting.
+                Elevation = Sigmoid(Elevation);
+                Humidity = Sigmoid(Humidity);
+                Temperature = Sigmoid(Temperature);
+
+                Current_Tile->Elevation = Elevation;
+
+                // set the humidity
+                Current_Tile->Humidity = Humidity;
+
+                // set the temperature
+                Current_Tile->Temperature = Temperature;
+
+                Current_Tile->Effect = Generate_Particle(Elevation, Humidity, Temperature, Current_Tile->Position);
+
+                // add the tile to the chunk
+                Current_Chunk->Content.push_back(Current_Tile);
+            }
+        }
+
+        // add the chunk to the map
+        Tiles[position] = *Current_Chunk;
+
+        return Current_Chunk->Content;
     }
 
     FVector3 Get_Relative_Position_To_Camera(Location position){
@@ -97,7 +156,7 @@ namespace MAP{
 
         Humidity_Generator = new TerGen::Generator(
             FREQ * 10,
-            AMP,
+            AMP * 10,
             LAC * 0.1,
             PERS * 0.5,
             SED,
@@ -109,7 +168,17 @@ namespace MAP{
             FREQ * 10,
             AMP,
             LAC * 0.1,
-            PERS * 0.5,
+            PERS * 0.55,
+            SED,
+            FMB_OCT,
+            WARP_OCT
+        );
+
+        Particle_Generator = new TerGen::Generator(
+            FREQ * 10,
+            AMP,
+            LAC,
+            PERS,
             SED,
             FMB_OCT,
             WARP_OCT
@@ -127,70 +196,55 @@ namespace MAP{
 
     }
 
-    double Sigmoid(double x)
-    {
-        return 1.0 / (1.0 + std::exp(-x));
-    }
-
     void Make_Map(){
         // generate for the few chunks up ahead.
         for (auto pos : CHAOS::Get_Surrounding_Positions(GLOBALS::CAMERA.CHUNK, 5)){
-            Tile* Current_Chunk = new Tile({{}, pos});
+            vector<Tile*> tmp = Get_Chunk_Content(pos);
 
-            for (int Y = 0; Y < GLOBALS::CHUNK_HEIGHT; Y++){
-                for (int X = 0; X < GLOBALS::CHUNK_WIDTH; X++){
-                    // get the tile from the generator
-                    Tile* Current_Tile = new Tile({{(float)X, (float)Y, 0}, pos});
-
-                    // global positions
-                    int Global_Y = Y + pos.Y * GLOBALS::CHUNK_HEIGHT;
-                    int Global_X = X + pos.X * GLOBALS::CHUNK_WIDTH;
-
-                    // get the elevation from the generator
-                    float Elevation = TerGen::Warp_Noise({Global_X, Global_Y}, Elevation_Generator);
-                    
-                    // get the humidity from the generator
-                    float Humidity = TerGen::Warp_Noise({Global_X, Global_Y}, Humidity_Generator);
-
-                    // get the temperature from the generator
-                    float Temperature = TerGen::Warp_Noise({Global_X, Global_Y}, Temperature_Generator);
-
-                    // Make sure the Elevation, Humidity and Temperature are at most, 1, and at least -1. But not clamping with minmax.
-                    // Use logaritm to make the values more interesting.
-                    Elevation = Sigmoid(Elevation);
-                    Humidity = Sigmoid(Humidity);
-                    Temperature = Sigmoid(Temperature);
-
-                    Current_Tile->Elevation = Elevation;
-
-                    // set the humidity
-                    Current_Tile->Humidity = Humidity;
-
-                    // set the temperature
-                    Current_Tile->Temperature = Temperature;
-
-                    Current_Tile->Effect = Generate_Particle(Elevation, Humidity, Temperature);
-
-                    // add the tile to the chunk
-                    Current_Chunk->Content.push_back(Current_Tile);
-                }
-            }
-
-            // add the chunk to the map
-            Tiles[pos] = *Current_Chunk;
+            // check if the chunk generation failed.
+            if (tmp.size() == 0)
+                GGUI::Report("Chunk generation failed!");
         }
     }
 
-    Particle Generate_Particle(float Elevation, float Humidity, float Temperature){
+    Particle Generate_Particle(float Elevation, float Humidity, float Temperature, Location position){
 
+        // generate a triangle of vectors each pointing to each point in the triangle, then multiply each vector by the corresponding values.
+        // After multiplying each value with their corresponding vector, we add the vector together, the resulting vector will represent the particle type we need.
+        std::array<FVector3, 3> Base_Vectors = Get_Equilateral_Vectors();
+        
+        // Now multiply each vector length by the value
+        Base_Vectors[0] = Base_Vectors[0] * Elevation;
+        Base_Vectors[1] = Base_Vectors[1] * Humidity;
+        Base_Vectors[2] = Base_Vectors[2] * Temperature;
 
+        // now add the vectors to construct the final vector.
+        FVector3 Result = std::accumulate(Base_Vectors.begin(), Base_Vectors.end(), FVector3{0, 0, 0});
 
+        // now we can check that which Base_Vector is closest to the Result
+        float Min_Distance = FLT_MAX;
+        int Closest_Vector_Index = -1;
+        for (int i = 0; i < 3; ++i) {
+            float distance = (Result - Base_Vectors[i]).Length();
+            if (distance < Min_Distance) {
+                Min_Distance = distance;
+                Closest_Vector_Index = i;
+            }
+        }
+
+        if (Closest_Vector_Index == 0)
+            return Particle(position);
+        else if (Closest_Vector_Index == 1)
+            return Particle("WAVE", position);
+        else if (Closest_Vector_Index == 2)
+            return Particle("FIRE", position);
     }
 
     // Inits everything related to TerGen and saves
     void Init(){
         Init_TerGen();
         Init_Tint_Map();
+        Init_Biome_Map();
 
         // if there is no previus run made, make a new world
         if (!Load_Map("Default.sv")){
@@ -231,8 +285,6 @@ namespace MAP{
 
         */
 
-       float Alpha = 0.7;   // Each tint can only contribute 10% to the tint map.
-
         for (unsigned char Temperature = 0; Temperature < UCHAR_MAX; Temperature++){
             for (unsigned char Elevation = 0; Elevation < UCHAR_MAX; Elevation++){
                 for (unsigned char Humidity = 0; Humidity < UCHAR_MAX; Humidity++){
@@ -241,18 +293,58 @@ namespace MAP{
                     // Apply the Temperature Tint.
                     // Since the temperature is already the gradient from 0-255 we dont need to calculate anything.
                     GGUI::RGB Temperature_Tint = {Temperature, Temperature, Temperature};
-                    Apply_Tint(Current_Tint, Temperature_Tint, Alpha);
+                    Apply_Tint(Current_Tint, Temperature_Tint, GLOBALS::Tint_Alpha);
 
                     // Apply the Humidity Tint.
                     // We need to lerp between the yellow and blue colors.
-                    GGUI::RGB Humidity_Tint = Lerp({0, 0, 255}, {255, 255, 0}, Humidity);
-                    Apply_Tint(Current_Tint, Humidity_Tint, Alpha);
+                    GGUI::RGB Humidity_Tint = Lerp({255, 255, 0}, {0, 0, 255}, Humidity);
+                    Apply_Tint(Current_Tint, Humidity_Tint, GLOBALS::Tint_Alpha);
 
-                    Apply_Tint(TINT_MAP[Temperature * UCHAR_MAX * UCHAR_MAX + Elevation * UCHAR_MAX + Humidity], Current_Tint, Alpha);
+                    Apply_Tint(TINT_MAP[Temperature * UCHAR_MAX * UCHAR_MAX + Elevation * UCHAR_MAX + Humidity], Current_Tint, GLOBALS::Tint_Alpha);
                 }
             }
         }
 
+    }
+
+    constexpr void Init_Biome_Map(){
+
+        // Biome ideas:
+        /*
+        
+
+
+            Create a vertical tree of branching blue, where the higher the elevation goes, the thinner the branches get.
+            This inturn creates a instance, where higher places are less probable to have water in them (blue).
+            And more deeper parts are more likely to have water (blue)
+            The tree is vertical the Elevation is the Y axis.
+            The above will be achieved by a carver system, with a pathfinder in the actual tile map and not in the BIOME_MAPPING.
+
+        */
+
+    }
+    
+    const std::array<FVector3, 3> Get_Equilateral_Vectors(){
+        const int Chape_Corner_Count = 3;
+        float Difference = 2 * GLOBALS::PI / Chape_Corner_Count;
+        
+        std::array<FVector3, 3> Result = {};
+
+        Result[0] = FVector3(0, 1, 0);
+
+        Result[1] = {
+            cos(Difference) * Result[0].X - sin(Difference) * Result[0].Y,
+            sin(Difference) * Result[0].X + cos(Difference) * Result[0].Y,
+            0
+        };
+
+        Result[2] = {
+            cos(-Difference) * Result[0].X - sin(-Difference) * Result[0].Y,
+            sin(-Difference) * Result[0].X + cos(-Difference) * Result[0].Y,
+            0
+        };
+
+        return Result;
     }
 
 }

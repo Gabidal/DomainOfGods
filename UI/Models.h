@@ -5,17 +5,25 @@
 #include <unordered_map>
 #include "../Src/Entity.h"
 #include "../Dependencies/GGUI.h"
+#include "../Dependencies/TerGen.h"
+
+#include "../Src/Globals.h"
 
 namespace MAP{
     class Tile;
+    extern TerGen::Generator* Particle_Generator;
+    extern double Sigmoid(double x);
 }
 
 class Model{
 public:
     std::vector<GGUI::Sprite> Frames;
 
-    Model(std::vector<GGUI::Sprite> frames){
+    float Speed = 1.0f;
+
+    Model(std::vector<GGUI::Sprite> frames, float speed = 1.0f){
         Frames = frames;
+        Speed = speed;
     }
 
     Model() = default;
@@ -42,17 +50,45 @@ public:
 
         Texture = Models[type][Get_Model_Variation(type)];
 
-        Animation_Frame = sin(Position.HIGH.X * Position.CHUNK.X * 10) / 10 * cos(Position.HIGH.Y * Position.CHUNK.Y);
+        float tmp = TerGen::Warp_Noise({
+            Position.HIGH.X + Position.CHUNK.X * GLOBALS::CHUNK_WIDTH,
+            Position.HIGH.Y + Position.CHUNK.Y * GLOBALS::CHUNK_HEIGHT
+        }, MAP::Particle_Generator);
+
+        tmp = MAP::Sigmoid(tmp);
+
+        Animation_Frame = tmp * UCHAR_MAX;
     }
 
     Particle(Location location){
         Position = location;
 
-        Animation_Frame = sin(Position.HIGH.X * Position.CHUNK.X) * cos(Position.HIGH.Y * Position.CHUNK.Y);
+        float tmp = TerGen::Warp_Noise({
+            Position.HIGH.X + Position.CHUNK.X * GLOBALS::CHUNK_WIDTH,
+            Position.HIGH.Y + Position.CHUNK.Y * GLOBALS::CHUNK_HEIGHT
+        }, MAP::Particle_Generator);
+
+        tmp = MAP::Sigmoid(tmp);
+
+        Animation_Frame = tmp * UCHAR_MAX;
     }
 
     Particle() = default;
+
+    bool Is_Empty(){
+        return Texture.Frames.size() == 0;
+    }
+
+    unsigned char Get_Animation_Frame_Offset(){
+        return Animation_Frame;
+    }
+
+    Model Get_Texture(){
+        return Texture;
+    }
 };
+
+extern GGUI::Sprite Interpolate_Animation_Frame(Model m, unsigned char Animation_Frame);
 
 extern void Init_Models();
 

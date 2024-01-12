@@ -126,7 +126,7 @@ public:
 
     FVector3() = default;
 
-    FVector3(float x, float y, float z){
+    constexpr FVector3(float x, float y, float z){
         X = x;
         Y = y;
         Z = z;
@@ -215,6 +215,10 @@ public:
         Y /= vec.Y;
         Z /= vec.Z;
         return *this;
+    }
+
+    float Length(){
+        return sqrt(X * X + Y * Y + Z * Z);
     }
 };
 
