@@ -245,7 +245,7 @@ namespace MAP{
 
                     // Apply the Humidity Tint.
                     // We need to lerp between the yellow and blue colors.
-                    GGUI::RGB Humidity_Tint = Lerp({0, 0, 255}, {0, 255, 255}, Humidity);
+                    GGUI::RGB Humidity_Tint = Lerp({0, 0, 255}, {255, 255, 0}, Humidity);
                     Apply_Tint(Current_Tint, Humidity_Tint, Alpha);
 
                     Apply_Tint(TINT_MAP[Temperature * UCHAR_MAX * UCHAR_MAX + Elevation * UCHAR_MAX + Humidity], Current_Tint, Alpha);
