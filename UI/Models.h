@@ -9,6 +9,8 @@
 
 #include "../Src/Globals.h"
 
+#include <functional>
+
 namespace MAP{
     class Tile;
     extern TerGen::Generator* Particle_Generator;
@@ -38,26 +40,16 @@ class Particle{
 protected:
     unsigned char Animation_Frame;
     Location Position;
-    Model Texture;
+    Model* Texture = nullptr;
 public:
+    // lambda to be called on every tick:
+    std::function<void(Location)> Tick = [](Location){};
+
+    // Works in ticks
+    unsigned short Life_Span = GLOBALS::TICK_LENGTH * 100;
 
     void Set_Texture(std::string name){
-        Texture = Models[name][Get_Model_Variation(name)];
-    }
-
-    Particle(std::string type, Location location){
-        Position = location;
-
-        Texture = Models[type][Get_Model_Variation(type)];
-
-        float tmp = TerGen::Warp_Noise({
-            Position.HIGH.X + Position.CHUNK.X * GLOBALS::CHUNK_WIDTH,
-            Position.HIGH.Y + Position.CHUNK.Y * GLOBALS::CHUNK_HEIGHT
-        }, MAP::Particle_Generator);
-
-        tmp = MAP::Sigmoid(tmp);
-
-        Animation_Frame = tmp * UCHAR_MAX;
+        Texture = &Models[name][Get_Model_Variation(name)];
     }
 
     Particle(Location location){
@@ -73,18 +65,30 @@ public:
         Animation_Frame = tmp * UCHAR_MAX;
     }
 
+    Particle(std::string type, Location location, std::function<void(Location)> Tick = [](Location){}) : Particle(location){
+        Texture = &Models[type][Get_Model_Variation(type)];
+
+        this->Tick = Tick;
+    }
+
     Particle() = default;
 
     bool Is_Empty(){
-        return Texture.Frames.size() == 0;
+        return Life_Span == 0 || Texture == nullptr || Texture->Frames.size() == 0;
     }
 
     unsigned char Get_Animation_Frame_Offset(){
         return Animation_Frame;
     }
 
-    Model Get_Texture(){
+    Model* Get_Texture(){
         return Texture;
+    }
+
+    void Transfer_Particle_Calculations(Particle* other){
+        this->Tick = other->Tick;
+        this->Life_Span = other->Life_Span;
+        this->Animation_Frame = other->Animation_Frame;
     }
 };
 

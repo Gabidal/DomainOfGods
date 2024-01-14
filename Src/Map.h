@@ -62,7 +62,9 @@ namespace MAP{
 
     extern const std::array<FVector3, 3> Get_Equilateral_Vectors();
 
-    extern Particle Generate_Particle(float Elevation, float Humidity, float Temperature, Location position);
+    extern Particle Generate_Particle(float Elevation, float Humidity, float Temperature, Location position, Particle* Previous = nullptr);
+
+    extern Tile* Get_Tile(Location location);
 
     // Linear interpolation function
     template<typename T>

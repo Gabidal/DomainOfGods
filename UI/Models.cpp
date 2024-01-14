@@ -50,7 +50,7 @@ GGUI::RGB Render_Tile(MAP::Tile* t) {
 
 GGUI::Sprite Render_Particle(MAP::Tile* t, unsigned char Animation_Frame){
     GGUI::Sprite Result = Interpolate_Animation_Frame(
-        t->Effect.Get_Texture(),
+        *t->Effect.Get_Texture(),
         Animation_Frame + t->Effect.Get_Animation_Frame_Offset()
     );
 

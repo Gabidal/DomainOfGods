@@ -134,6 +134,19 @@ namespace MAP{
         return Result;
     }
 
+    Tile* Get_Tile(Location location){
+        location.Update_Chunk_Location();
+
+        unsigned int Internal_Index = location.HIGH.Y * GLOBALS::CHUNK_HEIGHT + location.HIGH.X;
+
+        vector<Tile*> childs = Get_Chunk_Content(location.CHUNK);
+
+        if (Internal_Index >= childs.size())
+            return nullptr;
+
+        return childs[Internal_Index];
+    }
+
     void Init_TerGen(){
 
         double FREQ = 0.001;
@@ -207,8 +220,7 @@ namespace MAP{
         }
     }
 
-    Particle Generate_Particle(float Elevation, float Humidity, float Temperature, Location position){
-
+    Particle Generate_Particle(float Elevation, float Humidity, float Temperature, Location position, Particle* Previous){
         // generate a triangle of vectors each pointing to each point in the triangle, then multiply each vector by the corresponding values.
         // After multiplying each value with their corresponding vector, we add the vector together, the resulting vector will represent the particle type we need.
         std::array<FVector3, 3> Base_Vectors = Get_Equilateral_Vectors();
@@ -219,25 +231,131 @@ namespace MAP{
         Base_Vectors[2] = Base_Vectors[2] * Temperature;
 
         // now add the vectors to construct the final vector.
-        FVector3 Result = std::accumulate(Base_Vectors.begin(), Base_Vectors.end(), FVector3{0, 0, 0});
+        FVector3 Sum = std::accumulate(Base_Vectors.begin(), Base_Vectors.end(), FVector3{0, 0, 0});
 
-        // now we can check that which Base_Vector is closest to the Result
+        // now we can check that which Base_Vector is closest to the Sum
         float Min_Distance = FLT_MAX;
         int Closest_Vector_Index = -1;
         for (int i = 0; i < 3; ++i) {
-            float distance = (Result - Base_Vectors[i]).Length();
+            float distance = (Sum - Base_Vectors[i]).Length();
             if (distance < Min_Distance) {
                 Min_Distance = distance;
                 Closest_Vector_Index = i;
             }
         }
 
-        if (Closest_Vector_Index == 0)
-            return Particle(position);
-        else if (Closest_Vector_Index == 1)
-            return Particle("WAVE", position);
-        else if (Closest_Vector_Index == 2)
-            return Particle("FIRE", position);
+        Particle Result;
+
+        if (Previous){
+            Result.Transfer_Particle_Calculations(Previous);
+        }
+        else{
+            Result = Particle(position);
+        }
+
+        if (Closest_Vector_Index == 1){
+            Result.Set_Texture("WAVE");
+            Result.Tick = [&](Location location){
+                Tile* Starting_Tile = Get_Tile(location);
+
+                // cold down the current tile
+                Starting_Tile->Temperature = Sigmoid(Starting_Tile->Temperature * (1 - Starting_Tile->Humidity));
+
+                float Lowest_Elevation = Starting_Tile->Elevation;
+                Location Lowest_Location;
+
+                // check if the surrounding locations have lower elevation, if so then spread water there.
+                for (auto neighboring_positions : CHAOS::Get_Surrounding_Positions({location.HIGH.X, location.HIGH.Y, location.HIGH.Z}, 1)){
+                    if (neighboring_positions.X < 0 || neighboring_positions.Y < 0)
+                        continue;
+
+                    // transform the IVector into a FVector
+                    Location tmp_position({
+                        neighboring_positions.X,
+                        neighboring_positions.Y,
+                        neighboring_positions.Z
+                    }, 
+                        location.CHUNK
+                    );
+
+                    Tile* Current_Tile = Get_Tile(tmp_position);
+
+                    if (Current_Tile->Elevation < Lowest_Elevation){
+                        Lowest_Elevation = Current_Tile->Elevation;
+                        Lowest_Location = tmp_position;
+                    }
+                }
+
+                // Now that we know the lowest location the water can flow into it.
+                if (Lowest_Elevation < Starting_Tile->Elevation){
+                    // move the water to the lowest location
+                    Tile* Lowest_Tile = Get_Tile(Lowest_Location);
+
+                    // calculate the flow which occurs from the difference between the elevations
+                    float Water_Flow = Lowest_Elevation / Starting_Tile->Elevation;
+
+                    // move the water to the lowest location
+                    Lowest_Tile->Humidity = Sigmoid(Lowest_Tile->Humidity + Water_Flow * Starting_Tile->Humidity);
+
+                    // remove the water from the current tile
+                    Starting_Tile->Humidity = Sigmoid(Starting_Tile->Humidity - Water_Flow * Starting_Tile->Humidity * 0.1);
+
+                    // now calculate dynamic erosion.
+                    Starting_Tile->Elevation = Sigmoid(Starting_Tile->Elevation * Water_Flow);
+                }
+            };
+        }
+        else if (Closest_Vector_Index == 2){
+            Result.Set_Texture("FIRE");
+            Result.Tick = [&](Location location){
+                Tile* Starting_Tile = Get_Tile(location);
+
+                bool Can_Be_Sustained = false;
+
+                // Fire feeds itself from the green color, so as long as there is green in the current tile the fire can spread.
+                if (
+                    // Check if the grounds isn't dried up from nutrients.
+                    Starting_Tile->Humidity > 0.05 && Starting_Tile->Humidity < 0.5 &&
+
+                    // Check if the temperature isn't too cold
+                    Starting_Tile->Temperature >= 0.7    
+                ){
+                    Can_Be_Sustained = true;
+                }
+
+                if (!Can_Be_Sustained){
+                    Result.Life_Span *= 0.5;
+                }
+                else{
+                    Starting_Tile->Humidity = Sigmoid(Starting_Tile->Humidity * (1 - Starting_Tile->Temperature));
+                    Starting_Tile->Temperature = Sigmoid(Starting_Tile->Temperature * (Starting_Tile->Temperature + 1));
+
+                    // check if the surrounding locations have lower elevation, if so then spread water there.
+                    for (auto neighboring_positions : CHAOS::Get_Surrounding_Positions({location.HIGH.X, location.HIGH.Y, location.HIGH.Z}, 1)){
+                        if (neighboring_positions.X < 0 || neighboring_positions.Y < 0)
+                            continue;
+
+                        // transform the IVector into a FVector
+                        Location tmp_position({
+                            neighboring_positions.X,
+                            neighboring_positions.Y,
+                            neighboring_positions.Z
+                        }, 
+                            location.CHUNK
+                        );
+
+                        Tile* Current_Tile = Get_Tile(tmp_position);
+
+                        // Heat the surrounding tiles 
+                        Current_Tile->Temperature = Sigmoid(Current_Tile->Temperature * (Starting_Tile->Temperature + 1));
+                        // Dry surrounding tiles.
+                        Current_Tile->Humidity = Sigmoid(Current_Tile->Humidity * (1 - Starting_Tile->Temperature));
+                    }
+                }
+            };
+        }
+
+        return Result;
     }
 
     // Inits everything related to TerGen and saves

@@ -2,6 +2,7 @@
 #include "../Dependencies/TerGen.h"
 #include "Globals.h"
 #include "../UI/Models.h"
+#include "Map.h"
 
 namespace CHAOS{
 
@@ -44,6 +45,26 @@ namespace CHAOS{
 
     // Goes through all the chunks and checks if some entity needs to be moved into another chunk.
     void Tick(){
+        int Needed_Chunk_Coverage = GGUI::Main->Get_Width() / GLOBALS::CHUNK_WIDTH;
+        // calculate particle ticks
+        for (auto Current_Tile : MAP::Get_Surrounding_Content(GLOBALS::CAMERA.CHUNK, Needed_Chunk_Coverage)){
+            if (Current_Tile->Effect.Is_Empty()){
+                // Check if the tile has the required attributes to host an particle.
+                MAP::Generate_Particle(
+                    Current_Tile->Elevation,
+                    Current_Tile->Humidity, 
+                    Current_Tile->Temperature, 
+                    Current_Tile->Position,
+                    &Current_Tile->Effect
+                );
+            }
+            else{
+                Current_Tile->Effect.Tick(Current_Tile->Position);
+
+                Current_Tile->Effect.Life_Span--;
+            }
+        }
+
         for (auto& Chunk : Entity_Chunks){
             vector<Entity *>& Content = Chunk.second;
             for (int i = 0; i < (int)Content.size(); i++){
